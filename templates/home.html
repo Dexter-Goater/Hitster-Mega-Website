@@ -1,0 +1,20 @@
+{%extends "layout.html" %}
+{%block content%}
+<a href="{{song}}">Song Link</a>
+<br>
+<br>
+<button onclick="toggleElement()">Show/Hide Song</button>
+<br>
+<br>
+<p class="song_info">{{search_song}} by {{artist}}</p>
+<h1 class="song_info">{{year}}</h1>
+<script>
+window.onload = toggleElement()
+function toggleElement(){
+    const elements = document.querySelectorAll(".song_info");
+    elements.forEach(element=>{
+    element.hidden = !element.hidden;
+    });
+}  
+</script>
+{%endblock%}   
