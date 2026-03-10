@@ -1,14 +1,62 @@
 {%extends "layout.html" %}
 {%block content%}
+<style>
+  @keyframes flashRed {
+    0% { background-color: rgba(255, 0, 0, 0.6); }
+    100% { background-color: transparent; }
+  }
+  .error-flash { animation: flashRed 0.5s ease-out; }
+
+
+  @keyframes flashGreen{
+    0% { background-color: rgba(21, 255, 0, 0.6); }
+    100% { background-color: transparent; }
+  }
+  .correct-flash { animation: flashGreen 0.5s ease-out; }
+</style>
+<br>
 <a href="{{song}}">Song Link</a>
 <br>
 <br>
-<button onclick="toggleElement()">Show/Hide Song</button>
+<!-- <button onclick="toggleElement()">Show/Hide Song</button> -->
 <br>
 <br>
+<p class="center">{{gameres[0][0]}} by {{gameres[0][1]}}</p>
+<h1 class="center">{{gameres[0][2]}}</h1>
+<div class="button-container"> <button class="choice-btn" id="before">Before</button>
+    <button class="choice-btn" id="same">Same Year</button>
+    <button class="choice-btn" id="after">After</button>
+</div>
 <p class="song_info">{{search_song}} by {{artist}}</p>
 <h1 class="song_info">{{year}}</h1>
 <script>
+  const correctId = "{{ correct_button }}".trim();
+
+
+  const buttons = document.querySelectorAll('.choice-btn');
+
+
+  buttons.forEach(button => {
+    button.addEventListener('click', () => {
+      console.log("You clicked:", button.id);
+      console.log("The correct answer is:", correctId);
+
+
+      if (button.id === correctId) {
+        document.body.classList.add('correct-flash');
+        setTimeout(() => {
+          document.body.classList.remove('correct-flash');
+        }, 1000);
+        document.location.reload()
+      } else {
+        document.body.classList.add('error-flash');
+        setTimeout(() => {
+          document.body.classList.remove('error-flash');
+        }, 1000);
+        document.location.reload()
+      }
+    });
+  });
 window.onload = toggleElement()
 function toggleElement(){
     const elements = document.querySelectorAll(".song_info");
@@ -17,4 +65,4 @@ function toggleElement(){
     });
 }  
 </script>
-{%endblock%}   
+{%endblock%}  

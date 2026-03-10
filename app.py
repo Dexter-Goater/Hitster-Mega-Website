@@ -1,4 +1,4 @@
-from flask import Flask, render_template, abort
+from flask import Flask, render_template, abort,session,jsonify,request
 import sqlite3
 import random
 import json
@@ -14,8 +14,8 @@ token = token_dict['access_token']
 spotifyObject = spotipy.Spotify(auth=token)
 user_name = spotifyObject.current_user()
 app = Flask(__name__)
-
 @app.route("/")
+
 def home():
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
@@ -30,10 +30,24 @@ def home():
     songs_dict = results['tracks']
     song_items = songs_dict['items']
     song = song_items[0]['uri']
+    gamedata = cur.execute("SELECT id from Song").fetchall()
+    gameid = gamedata[random.randint(0, len(data) - 1)][0]
+    while gameid == id:
+      gameid = gamedata[random.randint(0, len(data) - 1)][0]
+    gameres = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {gameid}").fetchall()
     title = "Home"
-    return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year)
+    if year == gameres[0][2]:
+        correct_button = "same"
+    elif year > gameres[0][2]:
+        correct_button = "after"
+    elif year< gameres [0][2]:
+        correct_button = "before"
+
+    return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,correct_button=correct_button)
+
+
+
 
 
 if __name__ == "__main__":
-
     app.run(debug=True)

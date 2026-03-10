@@ -1,0 +1,21 @@
+a{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.center{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.choice-btn{
+    width: auto;             /* Ensures they don't stretch to fill the screen */
+}
+.button-container {
+    display: flex;          /* Activates Flexbox */
+    justify-content: center; /* Centers items horizontally */
+    align-items: center;     /* Centers items vertically */
+    width: 100%;            /* FORCES the container to be the full width */
+    gap: 10px;              /* Space between buttons */
+    margin: 20px 0;         /* Space above and below the row */
+}
