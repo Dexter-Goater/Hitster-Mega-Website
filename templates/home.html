@@ -21,7 +21,14 @@
     padding: 15px;
     border: 1px solid black;
   }
-
+  .boxtext{
+    font-size: 15px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+  .invisible{
+    display: none;
+  }
 
 </style>
 <br>
@@ -31,7 +38,10 @@
 <!-- <button onclick="toggleElement()">Show/Hide Song</button> -->
 <br>
 <br>
-<div class="box"></div>
+<div class="box">
+  <p id="text1" class="boxtext" draggable="true">{{gameres[0][0]}} <br>by {{gameres[0][1]}}
+    <br>{{gameres[0][2]}}</p>
+</div>
 <div class="box"></div>
 <div class="box"></div>
 <div class="box"></div>
@@ -50,9 +60,8 @@
 <br>
 <br>
 
-<p class="center">{{gameres[0][0]}}</p>
-<p class="center">{{gameres[0][1]}}</p>
-<h1 class="center">{{gameres[0][2]}}</h1>
+
+
 <div class="button-container"> <button class="choice-btn" id="before">Before</button>
     <button class="choice-btn" id="same">Same Year</button>
     <button class="choice-btn" id="after">After</button>
