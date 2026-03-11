@@ -7,12 +7,22 @@
   }
   .error-flash { animation: flashRed 0.5s ease-out; }
 
-
   @keyframes flashGreen{
     0% { background-color: rgba(21, 255, 0, 0.6); }
     100% { background-color: transparent; }
   }
   .correct-flash { animation: flashGreen 0.5s ease-out; }
+  .box{
+    float: left;
+    background-color: bisque;
+    width: 100px;
+    height: 100px;
+    margin: 10px;
+    padding: 15px;
+    border: 1px solid black;
+  }
+
+
 </style>
 <br>
 <a href="{{song}}">Song Link</a>
@@ -21,7 +31,27 @@
 <!-- <button onclick="toggleElement()">Show/Hide Song</button> -->
 <br>
 <br>
-<p class="center">{{gameres[0][0]}} by {{gameres[0][1]}}</p>
+<div class="box"></div>
+<div class="box"></div>
+<div class="box"></div>
+<div class="box"></div>
+<div class="box"></div>
+<div class="box"></div>
+<div class="box"></div>
+<div class="box"></div>
+<div class="box"></div>
+<div class="box"></div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+<p class="center">{{gameres[0][0]}}</p>
+<p class="center">{{gameres[0][1]}}</p>
 <h1 class="center">{{gameres[0][2]}}</h1>
 <div class="button-container"> <button class="choice-btn" id="before">Before</button>
     <button class="choice-btn" id="same">Same Year</button>
