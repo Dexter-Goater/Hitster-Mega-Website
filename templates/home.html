@@ -21,10 +21,10 @@
     padding: 15px;
     border: 1px solid black;
   }
-  .boxtext{
+  .boxText{
     font-size: 15px;
     margin-top: 5px;
-    margin-bottom: 5px;
+    margin-bottom: 5px; 
   }
   .invisible{
     display: none;
@@ -39,7 +39,7 @@
 <br>
 <br>
 <div class="box">
-  <p id="text1" class="boxtext" draggable="true">{{gameres[0][0]}} <br>by {{gameres[0][1]}}
+  <p id="text1" class="boxText" draggable="true">{{gameres[0][0]}} <br>by {{gameres[0][1]}}
     <br>{{gameres[0][2]}}</p>
 </div>
 <div class="box"></div>
@@ -68,6 +68,7 @@
 </div>
 <p class="song_info">{{search_song}} by {{artist}}</p>
 <h1 class="song_info">{{year}}</h1>
+<script src="/static/javascript/drag.js"></script>
 <script>
   const correctId = "{{ correct_button }}".trim();
 
