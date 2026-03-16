@@ -8,14 +8,20 @@ a{
     justify-content: center;
     align-items: center;
 }
-.choice-btn{
-    width: auto;             /* Ensures they don't stretch to fill the screen */
-}
-.button-container {
-    display: flex;          /* Activates Flexbox */
-    justify-content: center; /* Centers items horizontally */
-    align-items: center;     /* Centers items vertically */
-    width: 100%;            /* FORCES the container to be the full width */
-    gap: 10px;              /* Space between buttons */
-    margin: 20px 0;         /* Space above and below the row */
-}
+  .box{
+    float: left;
+    background-color: bisque;
+    width: 100px;
+    height: 100px;
+    margin: 10px;
+    padding: 15px;
+    border: 1px solid black;
+  }
+  .boxText{
+    font-size: 15px;
+    margin-top: 5px;
+    margin-bottom: 5px; 
+  }
+  .invisible{
+    display: none;
+  }

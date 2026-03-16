@@ -35,15 +35,14 @@ def home():
     while gameid == id:
       gameid = gamedata[random.randint(0, len(data) - 1)][0]
     gameres = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {gameid}").fetchall()
-    title = "Home"
-    if year == gameres[0][2]:
-        correct_button = "same"
-    elif year > gameres[0][2]:
-        correct_button = "after"
-    elif year< gameres [0][2]:
-        correct_button = "before"
+    boxsong = cur.execute(f"SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
+   
 
-    return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,correct_button=correct_button)
+
+    title = "Home"
+    
+
+    return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,boxsong=boxsong)
 
 
 
