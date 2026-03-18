@@ -21,6 +21,8 @@ def home():
     cur = conn.cursor()
     data = cur.execute("SELECT id from Song").fetchall()
     id = data[random.randint(0, len(data) - 1)][0]
+    starting_box_song_id = data[random.randint(0, len(data) - 1)][0]
+    cur.execute("UPDATE boxes SET songid = ? WHERE boxid = 'box5'",(starting_box_song_id,))
     res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
     name = res[0]
     artist = res[0][1]
@@ -40,7 +42,8 @@ def home():
 
 
     title = "Home"
-    
+    conn.commit()
+    conn.close()
 
     return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,boxsong=boxsong)
 
