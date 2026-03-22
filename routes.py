@@ -44,9 +44,7 @@ def home():
     title = "Home"
     conn.commit()
     conn.close()
-
     return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,boxsong=boxsong)
-
 
 
 
