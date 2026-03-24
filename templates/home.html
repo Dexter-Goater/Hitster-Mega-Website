@@ -50,16 +50,31 @@ function toggleElement(){
 }  
 
 function logAllBoxData() {
-    const allData = {};
+    const data = {};
 
     for (let i = 1; i <= 10; i++) {
       const box = document.getElementById(`box${i}`);
       const texts = box.querySelectorAll('.boxText');
-      allData[`box${i}`] = Array.from(texts).map(p => p.innerText.trim());
+      data[`box${i}`] = Array.from(texts).map(p => p.innerText.trim());
     }
 
-    console.log(allData);
-  }
+    console.log(data);
+
+    fetch('/process-data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({data: data})
+    })
+    .then(response => response.text())
+    .then(result => {
+      console.log(result);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+      }
 
 </script>
 {%endblock%}  
