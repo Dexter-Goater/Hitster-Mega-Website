@@ -14,8 +14,11 @@ token = token_dict['access_token']
 spotifyObject = spotipy.Spotify(auth=token)
 user_name = spotifyObject.current_user()
 app = Flask(__name__)
-@app.route("/")
 
+class DataStore():
+    boxdata = None
+
+@app.route("/")
 def home():
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
@@ -38,16 +41,33 @@ def home():
       gameid = gamedata[random.randint(0, len(data) - 1)][0]
     gameres = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {gameid}").fetchall()
     boxsong = cur.execute(f"SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
-   
-
+    songids=DataStore.boxdata
+    for box,id in songids.items():
+        pass
 
     title = "Home"
     conn.commit()
     conn.close()
-    return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,boxsong=boxsong)
+    return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,boxsong=boxsong,boxdata=boxdata)
 
 
-
+@app.route('/process-data', methods=['POST'])
+def process_data():
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    data = request.json['data']
+    print(data)
+    result = {k: v[0].split('\n')[0] for k, v in data.items() if v}
+    print(result)
+    
+    song_ids = {}
+    for box, name in result.items():
+        row = cur.execute("SELECT id FROM song WHERE name = ?", (name,)).fetchone()
+        song_ids[box] = row[0] if row else None
+    
+    print(song_ids)
+    DataStore.boxdata = song_ids
+    return jsonify({'result': result, 'song_ids': song_ids})
   
 if __name__ == "__main__":
     app.run(debug=True)

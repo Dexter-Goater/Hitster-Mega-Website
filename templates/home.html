@@ -13,7 +13,7 @@
   {% for song in boxsong %}
     {% if song[0] == 'box' ~ i %}
     <p id="text{{ i }}" class="boxText" draggable="true">
-      {{ song[2] }} by {{ song[4] }} <br> {{ song[3] }}
+      {{ song[2] }} <br>by {{ song[4] }} <br> {{ song[3] }}
     </p>
     {% endif %}
   {% endfor %}
@@ -27,7 +27,7 @@
 <br>
 <br>
 <br>
-
+<p>{{boxdata}}</p>
 
 
 
@@ -57,24 +57,24 @@ function logAllBoxData() {
       const texts = box.querySelectorAll('.boxText');
       data[`box${i}`] = Array.from(texts).map(p => p.innerText.trim());
     }
-
-    console.log(data);
-
     fetch('/process-data', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({data: data})
-    })
-    .then(response => response.text())
-    .then(result => {
-      console.log(result);
-    })
-    .catch(error => {
-      console.error('Error:', error);
-    });
-      }
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({data: data})
+  })
+  .then(response => response.text())
+  .then(result => {
+    console.log(result);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+
+  }
+
+
 
 </script>
 {%endblock%}  
