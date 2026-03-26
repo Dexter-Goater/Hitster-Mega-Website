@@ -41,14 +41,15 @@ def home():
       gameid = gamedata[random.randint(0, len(data) - 1)][0]
     gameres = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {gameid}").fetchall()
     boxsong = cur.execute(f"SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
-    songids=DataStore.boxdata
-    for box,id in songids.items():
-        pass
+    songids = DataStore.boxdata
+    print(songids)
+    
+    
 
     title = "Home"
     conn.commit()
     conn.close()
-    return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,boxsong=boxsong,boxdata=boxdata)
+    return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,boxsong=boxsong)
 
 
 @app.route('/process-data', methods=['POST'])
@@ -65,6 +66,12 @@ def process_data():
         row = cur.execute("SELECT id FROM song WHERE name = ?", (name,)).fetchone()
         song_ids[box] = row[0] if row else None
     
+    for box, song_id in song_ids.items():
+        if song_id is not None:
+            cur.execute("UPDATE boxes SET songid = ? WHERE boxid = ?", (song_id, box))
+    
+    conn.commit()
+    conn.close()
     print(song_ids)
     DataStore.boxdata = song_ids
     return jsonify({'result': result, 'song_ids': song_ids})

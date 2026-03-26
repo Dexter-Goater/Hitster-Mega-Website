@@ -19,7 +19,7 @@
   {% endfor %}
 </div>
 {% endfor %}
-<button onClick="logAllBoxData()">Submit</button>
+<button onClick="logAllBoxData()" >Submit</button>
 <br>
 <br>
 <br>
@@ -67,11 +67,11 @@ function logAllBoxData() {
   .then(response => response.text())
   .then(result => {
     console.log(result);
+    window.location.reload();
   })
   .catch(error => {
     console.error('Error:', error);
   });
-
   }
 
 
