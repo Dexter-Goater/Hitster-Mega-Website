@@ -24,8 +24,6 @@ def home():
     cur = conn.cursor()
     data = cur.execute("SELECT id from Song").fetchall()
     id = data[random.randint(0, len(data) - 1)][0]
-    starting_box_song_id = data[random.randint(0, len(data) - 1)][0]
-    cur.execute("UPDATE boxes SET songid = ? WHERE boxid = 'box5'",(starting_box_song_id,))
     res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
     name = res[0]
     artist = res[0][1]
@@ -66,6 +64,7 @@ def process_data():
         row = cur.execute("SELECT id FROM song WHERE name = ?", (name,)).fetchone()
         song_ids[box] = row[0] if row else None
     
+    cur.execute("UPDATE boxes SET songid = NULL")
     for box, song_id in song_ids.items():
         if song_id is not None:
             cur.execute("UPDATE boxes SET songid = ? WHERE boxid = ?", (song_id, box))
@@ -75,6 +74,15 @@ def process_data():
     print(song_ids)
     DataStore.boxdata = song_ids
     return jsonify({'result': result, 'song_ids': song_ids})
-  
+
+@app.route('/reset', methods=['POST'])
+def reset():
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    cur.execute("UPDATE boxes SET songid = NULL")
+    conn.commit()
+    conn.close()
+
+
 if __name__ == "__main__":
     app.run(debug=True)
