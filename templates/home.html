@@ -37,8 +37,8 @@
 
 <h2>box where guesses appear</h2>
 <div class="box" id="boxGuess">  
-  <p id="text1" class="boxText" draggable="true">{{gameres[0][0]}} <br>by {{gameres[0][1]}}
-  <br>{{gameres[0][2]}}</p></div>
+  <p id="text1" class="boxText" draggable="true">{{name[0]}} <br>by {{artist}} <br> {{year}}
+</p></div>
 <script src="/static/javascript/drag.js"></script>
 
 <script>
@@ -67,7 +67,7 @@ function logAllBoxData() {
   })
   .then(response => response.text())
   .then(result => {
-    console.log(result);
+    console.log();
     window.location.reload();
   })
   .catch(error => {

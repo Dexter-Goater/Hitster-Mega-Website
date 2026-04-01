@@ -24,7 +24,9 @@ def home():
     cur = conn.cursor()
     data = cur.execute("SELECT id from Song").fetchall()
     id = data[random.randint(0, len(data) - 1)][0]
+    print(id)
     res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
+    print(res)
     name = res[0]
     artist = res[0][1]
     year = res[0][2]
@@ -33,21 +35,15 @@ def home():
     songs_dict = results['tracks']
     song_items = songs_dict['items']
     song = song_items[0]['uri']
-    gamedata = cur.execute("SELECT id from Song").fetchall()
-    gameid = gamedata[random.randint(0, len(data) - 1)][0]
-    while gameid == id:
-      gameid = gamedata[random.randint(0, len(data) - 1)][0]
-    gameres = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {gameid}").fetchall()
     boxsong = cur.execute(f"SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
     songids = DataStore.boxdata
-    print(songids)
     
     
 
     title = "Home"
     conn.commit()
     conn.close()
-    return render_template("home.html",title=title,song=song,search_song=search_song,artist=artist, year=year, gameres=gameres,boxsong=boxsong)
+    return render_template("home.html",title=title,song=song,name=name,search_song=search_song,year=year,artist=artist,boxsong=boxsong)
 
 
 @app.route('/process-data', methods=['POST'])
