@@ -1,19 +1,24 @@
 from flask import Flask, render_template, abort,session,jsonify,request
+from dotenv import load_dotenv
 import sqlite3
+import os
 import random
 import json
 import spotipy
 import webbrowser
+load_dotenv()
 username = 'wqgfeis2dlz27xoecb7h5oqfa'
-clientID = 'f1d1f56639ec493ea1102ab8d340f871'
-clientSecret = '4623201be31f464c83c89dd084da2527'
+clientID = os.getenv("SPOTIFY_CLIENT_ID")
+clientSecret = os.getenv("SPOTIFY_CLIENT_SECRET")
 redirect_uri = 'https://example.com/'
 oauth_object = spotipy.SpotifyOAuth(clientID, clientSecret, redirect_uri)
 token_dict = oauth_object.get_access_token()
 token = token_dict['access_token']
+
 spotifyObject = spotipy.Spotify(auth=token)
 user_name = spotifyObject.current_user()
 app = Flask(__name__)
+
 
 class DataStore():
     boxdata = None
