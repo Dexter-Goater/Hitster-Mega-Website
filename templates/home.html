@@ -4,8 +4,7 @@
 <br>
 {% if user_picture and user_name %}
 <div class="user-profile">
-    <img src="{{ user_picture }}" alt="{{ user_name }}'s profile picture" width="40" height="40" style="border-radius: 50%;">
-    <span>{{ user_name }}</span>
+    <p><img src="{{ user_picture }}" alt="{{ user_name }}'s profile picture" width="40" height="40" style="border-radius: 50%;"> {{ user_name }}</p>
 </div>
 {% endif %}
 <a href="{{song}}">Song Link</a>
