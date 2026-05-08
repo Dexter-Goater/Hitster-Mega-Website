@@ -1,4 +1,5 @@
-from flask import Flask, render_template, abort,session,jsonify,request
+from flask import Flask, render_template, abort,session,jsonify,request,redirect,url_for
+from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import sqlite3
 import os
@@ -6,6 +7,7 @@ import random
 import json
 import spotipy
 import webbrowser
+import requests
 load_dotenv()
 username = 'wqgfeis2dlz27xoecb7h5oqfa'
 clientID = os.getenv("SPOTIFY_CLIENT_ID")
@@ -18,37 +20,99 @@ token = token_dict['access_token']
 spotifyObject = spotipy.Spotify(auth=token)
 user_name = spotifyObject.current_user()
 app = Flask(__name__)
+app.secret_key = os.getenv("APP_SECRET_KEY")
 
+google_client_id = os.getenv("GOOGLE_CLIENT_ID")
+google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+google_redirect_uri = 'https://127.0.0.1:5000/login/callback'
+
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=google_client_id,
+    client_secret=google_client_secret,
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
 
 class DataStore():
     boxdata = None
 
 @app.route("/")
 def home():
+    if 'google_token' in session:
+        user = session['google_token'].get('userinfo')
+        if user:
+            conn = sqlite3.connect("Hitster.db")
+            cur = conn.cursor()
+            user_name = user.get('name')
+            user_picture = user.get('picture')
+            data = cur.execute("SELECT id from Song").fetchall()
+            id = data[random.randint(0, len(data) - 1)][0]
+            res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
+            name = res[0]
+            artist = res[0][1]
+            year = res[0][2]
+            search_song = f"{name[0]}"
+            results = spotifyObject.search(f"q=track:{name}%20artist:{artist}%20year:{year}")
+            songs_dict = results['tracks']
+            song_items = songs_dict['items']
+            song = song_items[0]['uri']
+            boxsong = cur.execute(f"SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
+            songids = DataStore.boxdata
+            title = "Home"
+            conn.commit()
+            conn.close()
+            return render_template("home.html",
+                                   title=title,
+                                   song=song,
+                                   name=name,
+                                   search_song=search_song,
+                                   year=year,
+                                   artist=artist,
+                                   boxsong=boxsong,
+                                   user_name = user_name,
+                                   user_picture = user_picture)
+    else:
+        return '<a class="button" href="/login">Google Login</a>'
+@app.route('/login')
+def login():
+    redirect_uri = url_for('authorized', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/login/authorized')
+def authorized():
+    token = google.authorize_access_token()
+    if token is None:
+        return 'Login failed.'
+    session['google_token'] = token
+    user = token.get('userinfo')
+    
+    # Save user to database
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
-    data = cur.execute("SELECT id from Song").fetchall()
-    id = data[random.randint(0, len(data) - 1)][0]
-    print(id)
-    res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
-    print(res)
-    name = res[0]
-    artist = res[0][1]
-    year = res[0][2]
-    search_song = f"{name[0]}"
-    results = spotifyObject.search(f"q=track:{name}%20artist:{artist}%20year:{year}")
-    songs_dict = results['tracks']
-    song_items = songs_dict['items']
-    song = song_items[0]['uri']
-    boxsong = cur.execute(f"SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
-    songids = DataStore.boxdata
-    
-    
-
-    title = "Home"
+    cur.execute("""
+        INSERT INTO users (id, name, email, profile_pic) 
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            email = excluded.email,
+            profile_pic = excluded.profile_pic
+    """, (
+        user.get('sub'),      # Google's unique user ID
+        user.get('name'),
+        user.get('email'),
+        user.get('picture')
+    ))
     conn.commit()
     conn.close()
-    return render_template("home.html",title=title,song=song,name=name,search_song=search_song,year=year,artist=artist,boxsong=boxsong)
+    
+    return redirect(url_for('home'))
+
+@app.route('/logout')
+def logout():
+    session.pop('google_token', None)
+    return redirect(url_for('home'))
 
 
 @app.route('/process-data', methods=['POST'])
