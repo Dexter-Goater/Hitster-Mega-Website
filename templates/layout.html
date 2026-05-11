@@ -6,8 +6,23 @@
     <title>{{title}}</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="shortcut icon" href="/static/favicon.ico"> 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
 <body> 
+    <ul>
+        <li><a href="/" class="active">Home</a></li>
+        <li><a href="#add_song">Add a Song</a></li>
+        <li><a href="#songlist">Song List</a></li>
+        <li><a href="#help">Help</a></li>
+        {% if user_picture and user_name %}
+            <div class="user-profile" style="display: flex; align-items: center; gap: 8px; float:right; padding: 0px 16px;">
+                <img src="{{ user_picture }}" alt="{{ user_name }}'s profile picture" width="40" height="40" style="border-radius: 50%; display: block;">
+                <p>{{ user_name }}</p>
+            </div>
+        {% endif %}
+    </ul>
     <main>{%block content%}{%endblock%}</main>
     
 </body>
