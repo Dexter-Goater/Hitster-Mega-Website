@@ -37,45 +37,47 @@ google = oauth.register(
 
 class DataStore():
     boxdata = None
-
 @app.route("/")
 def home():
+    user_name = None
+    user_picture = None
+
     if 'google_token' in session:
         user = session['google_token'].get('userinfo')
         if user:
-            conn = sqlite3.connect("Hitster.db")
-            cur = conn.cursor()
             user_name = user.get('name')
             user_picture = user.get('picture')
-            data = cur.execute("SELECT id from Song").fetchall()
-            id = data[random.randint(0, len(data) - 1)][0]
-            res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
-            name = res[0]
-            artist = res[0][1]
-            year = res[0][2]
-            search_song = f"{name[0]}"
-            results = spotifyObject.search(f"q=track:{name}%20artist:{artist}%20year:{year}")
-            songs_dict = results['tracks']
-            song_items = songs_dict['items']
-            song = song_items[0]['uri']
-            boxsong = cur.execute(f"SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
-            songids = DataStore.boxdata
-            title = "Home"
-            conn.commit()
-            conn.close()
-            return render_template("home.html",
-                                   title=title,
-                                   song=song,
-                                   name=name,
-                                   search_song=search_song,
-                                   year=year,
-                                   artist=artist,
-                                   boxsong=boxsong,
-                                   user_name = user_name,
-                                   user_picture = user_picture)
-    else:
-        return '<a class="button" href="/login">Google Login</a>'
-@app.route('/login')
+
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    data = cur.execute("SELECT id from Song").fetchall()
+    id = data[random.randint(0, len(data) - 1)][0]
+    res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
+    name = res[0]
+    artist = res[0][1]
+    year = res[0][2]
+    search_song = f"{name[0]}"
+    results = spotifyObject.search(f"q=track:{name}%20artist:{artist}%20year:{year}")
+    songs_dict = results['tracks']
+    song_items = songs_dict['items']
+    song = song_items[0]['uri']
+    boxsong = cur.execute("SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
+    title = "Home"
+    conn.commit()
+    conn.close()
+
+    return render_template("home.html",
+                           title=title,
+                           song=song,
+                           name=name,
+                           search_song=search_song,
+                           year=year,
+                           artist=artist,
+                           boxsong=boxsong,
+                           user_name=user_name,
+                           user_picture=user_picture)
+@app.route("/login")
+
 def login():
     redirect_uri = url_for('authorized', _external=True)
     return google.authorize_redirect(redirect_uri)
