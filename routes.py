@@ -50,7 +50,7 @@ def home():
 
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
-    data = cur.execute("SELECT id from Song").fetchall()
+    data = cur.execute("SELECT id from Song WHERE Approved = 1").fetchall()
     id = data[random.randint(0, len(data) - 1)][0]
     res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
     name = res[0]
@@ -76,8 +76,31 @@ def home():
                            boxsong=boxsong,
                            user_name=user_name,
                            user_picture=user_picture)
-@app.route("/login")
 
+@app.route("/add_song")
+def add_song():
+    user_name = None
+    user_picture = None
+
+    if 'google_token' in session:
+        user = session['google_token'].get('userinfo')
+        if user:
+            user_name = user.get('name')
+            user_picture = user.get('picture')
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+
+
+    title = "Add a song"
+    conn.commit()
+    conn.close()
+
+    return render_template("add_song.html",
+                           title=title,
+                           user_name=user_name,
+                           user_picture=user_picture)
+
+@app.route("/login")
 def login():
     redirect_uri = url_for('authorized', _external=True)
     return google.authorize_redirect(redirect_uri)
@@ -149,6 +172,7 @@ def reset():
     cur.execute("UPDATE boxes SET songid = NULL")
     conn.commit()
     conn.close()
+
 
 
 if __name__ == "__main__":
