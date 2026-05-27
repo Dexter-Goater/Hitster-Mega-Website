@@ -77,7 +77,7 @@ def home():
                            user_name=user_name,
                            user_picture=user_picture)
 
-@app.route("/add_song")
+@app.route("/add_song", methods=["GET","POST"])
 def add_song():
     user_name = None
     user_picture = None
@@ -89,6 +89,11 @@ def add_song():
             user_picture = user.get('picture')
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
+    if request.method == "POST":
+        song_name = request.form.get("sname")
+        song_year = request.form.get("syear")
+        song_artist = request.form.get("sartist")
+        cur.execute(f"INSERT INTO song (id,name,releaseyear,artist,approved) VALUES (?,?,?,?,?)",(None,song_name,song_year,song_artist,0))
 
 
     title = "Add a song"
@@ -124,7 +129,7 @@ def authorized():
             email = excluded.email,
             profile_pic = excluded.profile_pic
     """, (
-        user.get('sub'),      # Google's unique user ID
+        user.get('sub'),      # Google user ID
         user.get('name'),
         user.get('email'),
         user.get('picture')

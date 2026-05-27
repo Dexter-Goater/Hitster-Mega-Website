@@ -1,4 +1,15 @@
 {%extends "layout.html" %}
 {%block content%}
 <style src="/static/css/style.css"></style>
+<form action="{{ url_for("add_song")}}" method="post">
+    <h2>Song Name</h2>
+    <input type="text" id="songname" name="sname" placeholder="song name">
+    <h2>Release Year</h2>
+    <input type="int" id="songyear" name="syear" placeholder="Release year">
+    <h2>Artist</h2>
+    <input type="text" id="artist" name="sartist" placeholder="Artist">
+    <br>
+    <br>
+    <button type="submit">Submit</button>
+</form>
 {%endblock%}
