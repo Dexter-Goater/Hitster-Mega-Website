@@ -35,6 +35,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
+
 class DataStore():
     boxdata = None
 @app.route("/")
@@ -81,29 +82,38 @@ def home():
 def add_song():
     user_name = None
     user_picture = None
+    show_error_none = False
+    login_location = "add a song"
 
     if 'google_token' in session:
         user = session['google_token'].get('userinfo')
         if user:
             user_name = user.get('name')
             user_picture = user.get('picture')
-    conn = sqlite3.connect("Hitster.db")
-    cur = conn.cursor()
-    if request.method == "POST":
-        song_name = request.form.get("sname")
-        song_year = request.form.get("syear")
-        song_artist = request.form.get("sartist")
-        cur.execute(f"INSERT INTO song (id,name,releaseyear,artist,approved) VALUES (?,?,?,?,?)",(None,song_name,song_year,song_artist,0))
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        if request.method == "POST":
+            song_name = request.form.get("sname")
+            song_year = request.form.get("syear")
+            song_artist = request.form.get("sartist")
+            if all(x is not None and x.strip() != "" for x in (song_name, song_year, song_artist)):
+                cur.execute(f"INSERT INTO song (id,name,releaseyear,artist,approved) VALUES (?,?,?,?,?)",(None,song_name,song_year,song_artist,0))
+                show_error_none = False
+            else:
+                show_error_none = True
 
 
-    title = "Add a song"
-    conn.commit()
-    conn.close()
+        title = "Add a song"
+        conn.commit()
+        conn.close()
 
-    return render_template("add_song.html",
-                           title=title,
-                           user_name=user_name,
-                           user_picture=user_picture)
+        return render_template("add_song.html",
+                            title=title,
+                            user_name=user_name,
+                            user_picture=user_picture,
+                            show_error_none=show_error_none)
+    else:
+        return render_template(login_location=login_location)
 
 @app.route("/login")
 def login():
