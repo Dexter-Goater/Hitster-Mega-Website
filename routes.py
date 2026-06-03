@@ -35,6 +35,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
+isadmin = False
 
 class DataStore():
     boxdata = None
@@ -47,10 +48,13 @@ def home():
         user = session['google_token'].get('userinfo')
         if user:
             user_name = user.get('name')
-            user_picture = user.get('picture')
-
+            user_picture = user.get('picture')      
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
+    admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+    if admin[0] == 1:
+        isadmin = True
+        
     data = cur.execute("SELECT id from Song WHERE Approved = 1").fetchall()
     id = data[random.randint(0, len(data) - 1)][0]
     res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
@@ -76,13 +80,16 @@ def home():
                            artist=artist,
                            boxsong=boxsong,
                            user_name=user_name,
-                           user_picture=user_picture)
+                           user_picture=user_picture,
+                           isadmin=isadmin)
 
 @app.route("/add_song", methods=["GET","POST"])
 def add_song():
     user_name = None
     user_picture = None
     show_error_none = False
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
     login_location = "add a song"
 
     if 'google_token' in session:
@@ -90,8 +97,6 @@ def add_song():
         if user:
             user_name = user.get('name')
             user_picture = user.get('picture')
-        conn = sqlite3.connect("Hitster.db")
-        cur = conn.cursor()
         if request.method == "POST":
             song_name = request.form.get("sname")
             song_year = request.form.get("syear")
@@ -102,7 +107,9 @@ def add_song():
             else:
                 show_error_none = True
 
-
+        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if admin[0] == 1:
+            isadmin = True
         title = "Add a song"
         conn.commit()
         conn.close()
@@ -111,9 +118,10 @@ def add_song():
                             title=title,
                             user_name=user_name,
                             user_picture=user_picture,
-                            show_error_none=show_error_none)
+                            show_error_none=show_error_none,
+                            isadmin=isadmin)
     else:
-        return render_template(login_location=login_location)
+        return render_template("login_needed.html",login_location=login_location)
 
 @app.route("/login")
 def login():

@@ -17,6 +17,9 @@
         <li><a href="/add_song">Add a Song</a></li>
         <li><a href="#songlist">Song List</a></li>
         <li><a href="#help">Help</a></li>
+        {% if isadmin %}
+            <li><a class="admin" href="#admin">Admin</a></li>
+        {% endif %}
         {% if user_picture and user_name %}
             <div class="user-profile" style="display: flex; align-items: center; gap: 8px; float: right; padding: 0px 16px;">
             <img src="{{ user_picture }}" alt="{{ user_name }}'s profile picture" width="40" height="40" style="border-radius: 50%; display: block;">
@@ -26,6 +29,16 @@
             <li style="float: right;"><a href="/login">Login with Google</a></li>
         {% endif %}
     </ul>
-    <main>{%block content%}{%endblock%}</main>
-    
+    <main>
+        {%block content%}
+        {%endblock%}
+    </main>
+    <script>
+    function toggleElement(){
+        const elements = document.querySelectorAll(".admin");
+        elements.forEach(element => {
+            element.hidden = !element.hidden;
+        });
+    }
+    </script>
 </body>
