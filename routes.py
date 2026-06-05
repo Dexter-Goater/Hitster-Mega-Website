@@ -43,45 +43,50 @@ class DataStore():
 def home():
     user_name = None
     user_picture = None
-
+    login_location = "Home"
     if 'google_token' in session:
-        user = session['google_token'].get('userinfo')
-        if user:
-            user_name = user.get('name')
-            user_picture = user.get('picture')      
-    conn = sqlite3.connect("Hitster.db")
-    cur = conn.cursor()
-    admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-    if admin[0] == 1:
-        isadmin = True
-        
-    data = cur.execute("SELECT id from Song WHERE Approved = 1").fetchall()
-    id = data[random.randint(0, len(data) - 1)][0]
-    res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
-    name = res[0]
-    artist = res[0][1]
-    year = res[0][2]
-    search_song = f"{name[0]}"
-    results = spotifyObject.search(f"q=track:{name}%20artist:{artist}%20year:{year}")
-    songs_dict = results['tracks']
-    song_items = songs_dict['items']
-    song = song_items[0]['uri']
-    boxsong = cur.execute("SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
-    title = "Home"
-    conn.commit()
-    conn.close()
+            user = session['google_token'].get('userinfo')
+            if user:
+                user_name = user.get('name')
+                user_picture = user.get('picture')
+      
+            conn = sqlite3.connect("Hitster.db")
+            cur = conn.cursor()
+            if user:
+                admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+                if admin[0] == 1:
+                    isadmin = True
+                
+            data = cur.execute("SELECT id from Song WHERE Approved = 1").fetchall()
+            id = data[random.randint(0, len(data) - 1)][0]
+            res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
+            name = res[0]
+            artist = res[0][1]
+            year = res[0][2]
+            search_song = f"{name[0]}"
+            results = spotifyObject.search(f"q=track:{name}%20artist:{artist}%20year:{year}")
+            songs_dict = results['tracks']
+            song_items = songs_dict['items']
+            song = song_items[0]['uri']
+            boxsong = cur.execute("SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
+            title = "Home"
+            conn.commit()
+            conn.close()
 
-    return render_template("home.html",
-                           title=title,
-                           song=song,
-                           name=name,
-                           search_song=search_song,
-                           year=year,
-                           artist=artist,
-                           boxsong=boxsong,
-                           user_name=user_name,
-                           user_picture=user_picture,
-                           isadmin=isadmin)
+            return render_template("home.html",
+                                title=title,
+                                song=song,
+                                name=name,
+                                search_song=search_song,
+                                year=year,
+                                artist=artist,
+                                boxsong=boxsong,
+                                user_name=user_name,
+                                user_picture=user_picture,
+                                isadmin=isadmin)
+    else:
+        return render_template("login_needed.html",login_location=login_location)
+    
 
 @app.route("/add_song", methods=["GET","POST"])
 def add_song():
@@ -122,6 +127,38 @@ def add_song():
                             isadmin=isadmin)
     else:
         return render_template("login_needed.html",login_location=login_location)
+    
+
+@app.route("/songlist")
+def song_list():
+    user_name = None
+    user_picture = None
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    login_location = "Songs List"
+
+    if 'google_token' in session:
+        user = session['google_token'].get('userinfo')
+        if user:
+            user_name = user.get('name')
+            user_picture = user.get('picture')
+        songs = cur.execute("SELECT name,artist FROM song WHERE Approved = 1").fetchall()
+
+        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if admin[0] == 1:
+            isadmin = True
+        title = "Songs List"
+        conn.commit()
+        conn.close()
+
+        return render_template("song_list.html",
+                            title=title,
+                            user_name=user_name,
+                            user_picture=user_picture,
+                            isadmin=isadmin,
+                            songs=songs)
+    else:
+        return render_template("login_needed.html",login_location=login_location)    
 
 @app.route("/login")
 def login():

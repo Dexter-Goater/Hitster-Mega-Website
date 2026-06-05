@@ -1,0 +1,30 @@
+{%extends "layout.html" %}
+{%block content%}
+<style src="/static/css/style.css"></style>
+
+<input 
+    type="text" 
+    id="songSearch" 
+    placeholder="Search by title or artist..." 
+    onkeyup="filterSongs()"
+>
+
+<div id="songList">
+    {%for song in songs%}
+        <p class="song-item">{{song[0]}} by {{song[1]}}</p>
+    {%endfor%}
+</div>
+
+<script>
+    function filterSongs() {
+        const query = document.getElementById("songSearch").value.toLowerCase();
+        const songs = document.querySelectorAll(".song-item");
+
+        songs.forEach(song => {
+            const text = song.textContent.toLowerCase();
+            song.style.display = text.includes(query) ? "" : "none";
+        });
+    }
+</script>
+
+{%endblock%}
