@@ -11,7 +11,7 @@
 
 <div id="songList">
     {%for song in songs%}
-        <p class="song-item">{{song[0]}} by {{song[1]}}</p>
+        <p class="song-item"> <img src="/static/cover_art/{{song[0]}}.jpg" style="width: 5%; height: 5%; vertical-align: middle;"> <span>{{song[1]}} by {{song[2]}}</span></p>
     {%endfor%}
 </div>
 
