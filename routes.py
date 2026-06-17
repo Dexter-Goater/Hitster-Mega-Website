@@ -142,8 +142,7 @@ def song_list():
         if user:
             user_name = user.get('name')
             user_picture = user.get('picture')
-        songs = cur.execute("SELECT id,name,artist FROM song WHERE Approved = 1").fetchall()
-
+        songs = cur.execute("SELECT id,name,artist,releaseyear FROM song WHERE Approved = 1").fetchall()
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin[0] == 1:
             isadmin = True
