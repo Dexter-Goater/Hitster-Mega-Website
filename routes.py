@@ -8,6 +8,7 @@ import json
 import spotipy
 import webbrowser
 import requests
+import datetime
 load_dotenv()
 username = 'wqgfeis2dlz27xoecb7h5oqfa'
 clientID = os.getenv("SPOTIFY_CLIENT_ID")
@@ -54,8 +55,13 @@ def home():
             cur = conn.cursor()
             if user:
                 admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-                if admin[0] == 1:
-                    isadmin = True
+                if admin:
+                    if admin[0] == 1:
+                        isadmin = True
+                    else:
+                        isadmin = False
+                else:
+                    isadmin = False
                 
             data = cur.execute("SELECT id from Song WHERE Approved = 1").fetchall()
             id = data[random.randint(0, len(data) - 1)][0]
@@ -158,7 +164,34 @@ def song_list():
                             songs=songs)
     else:
         return render_template("login_needed.html",login_location=login_location)    
+    
 
+@app.route("/help")
+def help():
+    user_name = None
+    user_picture = None
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    login_location = "Help Forums"    
+    if 'google_token' in session:
+        user = session['google_token'].get('userinfo')
+        if user:
+            user_name = user.get('name')
+            user_picture = user.get('picture')
+        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if admin[0] == 1:
+            isadmin = True
+        title = "Songs List"
+        conn.commit()
+        conn.close()
+
+        return render_template("forum.html",
+                            title=title,
+                            user_name=user_name,
+                            user_picture=user_picture,
+                            isadmin=isadmin,)
+    else:
+        return render_template("login_needed.html",login_location=login_location)    
 @app.route("/login")
 def login():
     redirect_uri = url_for('authorized', _external=True)
@@ -171,26 +204,33 @@ def authorized():
         return 'Login failed.'
     session['google_token'] = token
     user = token.get('userinfo')
-    
-    # Save user to database
+
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
+
+    existing = cur.execute("SELECT id FROM users WHERE id = ?", (user.get('sub'),)).fetchone()
+    is_new_user = existing is None
+
+    now = datetime.datetime.now().strftime("%d-%m-%y")
+
     cur.execute("""
-        INSERT INTO users (id, name, email, profile_pic) 
-        VALUES (?, ?, ?, ?)
+        INSERT INTO users (id, name, email, profile_pic, date_joined)
+        VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
             email = excluded.email,
             profile_pic = excluded.profile_pic
     """, (
-        user.get('sub'),      # Google user ID
+        user.get('sub'),
         user.get('name'),
         user.get('email'),
-        user.get('picture')
+        user.get('picture'),
+        now
     ))
+
     conn.commit()
     conn.close()
-    
+
     return redirect(url_for('home'))
 
 @app.route('/logout')

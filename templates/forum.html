@@ -1,0 +1,33 @@
+{%extends "layout.html" %}
+{%block content%}
+<style src="/static/css/style.css"></style>
+<p>
+<input 
+    type="text" 
+    id="songSearch" 
+    placeholder="Search by title or artist..." 
+    onkeyup="filterSearchSongs()"
+>
+Filter:
+<select onchange="filterSongs(this.value)">
+    <option value="default">Default</option>
+    <option value="alpha">Alphabetically</option>
+    <option value="date">By Release Date</option>
+    <option value="artist">By Artist</option>
+</select>
+</p>
+
+<div id="songList">
+    {%for song in songs%}
+        <p class="song-item"
+           data-id="{{song[0]}}"
+           data-title="{{song[1]}}" 
+           data-artist="{{song[2]}}" 
+           data-date="{{song[3]}}">
+            <img src="/static/cover_art/{{song[0]}}.jpg" style="width: 5%; height: 5%; vertical-align: middle;">
+            <span>{{song[1]}} by {{song[2]}}</span>
+        </p>
+    {%endfor%}
+</div>
+
+{%endblock%}
