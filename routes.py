@@ -192,6 +192,8 @@ def help():
                             isadmin=isadmin,)
     else:
         return render_template("login_needed.html",login_location=login_location)    
+    
+    
 @app.route("/login")
 def login():
     redirect_uri = url_for('authorized', _external=True)
