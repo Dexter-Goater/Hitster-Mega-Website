@@ -181,6 +181,7 @@ def help():
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin[0] == 1:
             isadmin = True
+        posts = cur.execute("SELECT PostID,OwnerID,Title,Resolved,PostDate FROM ForumPost").fetchall()
         title = "Songs List"
         conn.commit()
         conn.close()
@@ -189,7 +190,8 @@ def help():
                             title=title,
                             user_name=user_name,
                             user_picture=user_picture,
-                            isadmin=isadmin,)
+                            isadmin=isadmin,
+                            posts=posts)
     else:
         return render_template("login_needed.html",login_location=login_location)    
     
