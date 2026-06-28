@@ -40,6 +40,8 @@ isadmin = False
 
 class DataStore():
     boxdata = None
+
+print(datetime.datetime.now().strftime("%d-%m-%y"))
 @app.route("/")
 def home():
     user_name = None

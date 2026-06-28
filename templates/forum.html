@@ -1,6 +1,6 @@
 {%extends "layout.html" %}
 {%block content%}
-<style src="/static/css/style.css"></style>
+<link rel="stylesheet" href="/static/css/style.css">
 <p>
 <button style="margin-left: 2%; margin-bottom: 1%;margin-top: 0.5%;">Create new post</button>
 <input 
@@ -9,27 +9,34 @@
     placeholder="Search for a post" 
     onkeyup="filterSearchPosts()"
 >
-
     Filter:
     <select onchange="filterposts(this.value)">
         <option value="default">Default</option>
         <option value="alpha">Alphabetically</option>
         <option value="date">By Post Date</option>
-        <option value="Resolved">Resolved</option>
+        <option value="resolved">Resolved</option>
     </select>
 </p>
+
+<div id="postList">
 {%for post in posts%}
-    <div class="post">
-        <a href="/help/{{post[0]}}" style="justify-content: left;align-items: left; margin-left: 1%;">{{post[2]}}</a>
+    <div class="postItem"
+        data-id="{{post[0]}}"
+        data-title="{{post[2]}}"
+        data-resolved="{{post[3]}}"
+        data-date="{{post[4]}}">
+        <a class="post-item"
+        href="/help/{{post[0]}}"
+        style="justify-content: left; align-items: flex-start; margin-left: 1%; margin-top: 2%;">{{post[2]}}</a>
     </div>
-    <br>
 {%endfor%}
+</div>
 <br>
 
 <script>
     function filterSearchPosts() {
         const query = document.getElementById("postSearch").value.toLowerCase();
-        const posts = document.querySelectorAll(".post");
+        const posts = document.querySelectorAll(".postItem");
         posts.forEach(post => {
             const text = post.textContent.toLowerCase();
             post.style.display = text.includes(query) ? "" : "none";
@@ -37,16 +44,14 @@
     }
     function filterposts(mode) {
         const list = document.getElementById("postList");
-        const posts = [...list.querySelectorAll(".post-item")];
-
+        const posts = [...list.querySelectorAll(".postItem")];
         posts.sort((a, b) => {
-            if (mode === "default") return a.dataset.postid.localeCompare(b.dataset.id)
+            if (mode === "default") return a.dataset.id.localeCompare(b.dataset.id);
             if (mode === "alpha") return a.dataset.title.localeCompare(b.dataset.title);
-            if (mode === "artist") return a.dataset.artist.localeCompare(b.dataset.artist);
-            if (mode === "date") return a.dataset.date - b.dataset.date;
+            if (mode === "resolved") return a.dataset.resolved.localeCompare(b.dataset.resolved);
+            if (mode === "date") return a.dataset.date.localeCompare(b.dataset.date);
             return 0; 
         });
-
         posts.forEach(post => list.appendChild(post));
     }
 </script>
