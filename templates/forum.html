@@ -24,10 +24,16 @@
         data-id="{{post[0]}}"
         data-title="{{post[2]}}"
         data-resolved="{{post[3]}}"
-        data-date="{{post[4]}}">
+        data-date="{{post[4]}}"
+        style="margin-bottom: 1%;">
         <a class="post-item"
         href="/help/{{post[0]}}"
-        style="justify-content: left; align-items: flex-start; margin-left: 1%; margin-top: 2%;">{{post[2]}}</a>
+        style="justify-content: left; align-items: flex-start; margin-left: 1%; margin-top: 2%; display: inline;">{{post[2]}} </a>
+        <span style="display: inline; float: right;margin-right: 5%; color:#fefdfd;font-family: Montserrat,sans-serif; font-weight: 500;">
+        {% if post[3] == 1 %}
+        ✅ Resolved
+        {% endif %}
+        </span>
     </div>
 {%endfor%}
 </div>

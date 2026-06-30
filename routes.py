@@ -184,7 +184,7 @@ def help():
         if admin[0] == 1:
             isadmin = True
         posts = cur.execute("SELECT PostID,OwnerID,Title,Resolved,PostDate FROM ForumPost").fetchall()
-        title = "Songs List"
+        title = "Help Forums"
         conn.commit()
         conn.close()
 
@@ -195,7 +195,36 @@ def help():
                             isadmin=isadmin,
                             posts=posts)
     else:
-        return render_template("login_needed.html",login_location=login_location)    
+        return render_template("login_needed.html",login_location=login_location)  
+
+@app.route("/help/<int:page_ID>")  
+def helppage(page_ID):
+    user_name = None
+    user_picture = None
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    login_location = "Help Forums"    
+    if 'google_token' in session:
+        user = session['google_token'].get('userinfo')
+        if user:
+            user_name = user.get('name')
+            user_picture = user.get('picture')
+        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if admin[0] == 1:
+            isadmin = True
+        postinfo = cur.execute("SELECT PostID,OwnerID,Title,Resolved,PostDate,Content FROM ForumPost WHERE PostID = ?",(page_ID,)).fetchone()
+        title = postinfo[2]
+        conn.commit()
+        conn.close()
+
+        return render_template("forumpage.html",
+                            title=title,
+                            user_name=user_name,
+                            user_picture=user_picture,
+                            isadmin=isadmin,
+                            postinfo=postinfo)
+    else:
+        return render_template("login_needed.html",login_location=login_location)     
     
     
 @app.route("/login")
