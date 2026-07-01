@@ -28,11 +28,12 @@
         style="margin-bottom: 1%;">
         <a class="post-item"
         href="/help/{{post[0]}}"
-        style="justify-content: left; align-items: flex-start; margin-left: 1%; margin-top: 2%; display: inline;">{{post[2]}} </a>
-        <span style="display: inline; float: right;margin-right: 5%; color:#fefdfd;font-family: Montserrat,sans-serif; font-weight: 500;">
+        style="justify-content: left; align-items: center; margin-left: 1%; margin-top: 2%; display: inline;">{{post[2]}} </a>
+        <span style="display: inline-flex; float: right;margin-right: 5%; color:#fefdfd;font-family: Montserrat,sans-serif; font-weight: 500;">
         {% if post[3] == 1 %}
-        ✅ Resolved
+        ✅ Resolved : 
         {% endif %}
+        Post by {{post[5]}} <img src="{{post[6]}}" style="height: 1.2vw; width: 1.2vw; margin-left: 0.5vw; ">
         </span>
     </div>
 {%endfor%}

@@ -183,7 +183,7 @@ def help():
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin[0] == 1:
             isadmin = True
-        posts = cur.execute("SELECT PostID,OwnerID,Title,Resolved,PostDate FROM ForumPost").fetchall()
+        posts = cur.execute("SELECT PostID,OwnerID,Title,Resolved,PostDate,OwnerName,OwnerPFP FROM ForumPost").fetchall()
         title = "Help Forums"
         conn.commit()
         conn.close()

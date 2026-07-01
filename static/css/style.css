@@ -47,7 +47,7 @@ button{
   }
   body{
      background-color:#190409;
-     margin: 0px;
+     margin-left: 2%; margin-right: 2%; margin-top: 0;
   }
   main{
     margin: 8px;
@@ -83,4 +83,7 @@ ul li a:hover {
   background-color: #2c2c2c;
   margin-left: 2%;
   margin-right: 60%;
+}
+.boxes{
+  margin-left: -2%; margin-right: -2%; margin-top: 0;
 }

@@ -7,8 +7,7 @@
 <br>
 <br>
 <!-- <button onclick="toggleElement()">Show/Hide Song</button> -->
-<br>
-<br>
+<div class="boxes">
 {% for i in range(1, 11) %}
 <div class="box" id="box{{ i }}">
   {% for song in boxsong %}
@@ -20,8 +19,7 @@
   {% endfor %}
 </div>
 {% endfor %}
-<br>
-<br>
+</div>
 <br>
 <br>
 <br>
@@ -31,7 +29,7 @@
 <br>
 
 
-<button onClick="resetAllData()" style="float: right; margin-left: 10px; margin-right: 15px;">Reset</button>
+<button onClick="resetAllData()" style="float: right; margin-left: 10px; margin-right: -1%;">Reset</button>
 <button onClick="logAllBoxData()" style="float: right;" >Submit</button>
 <br>
 
