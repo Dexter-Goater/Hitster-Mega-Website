@@ -1,6 +1,18 @@
 {%extends "layout.html" %}
 {%block content%}
 <link rel="stylesheet" href="/static/css/style.css">
-<h1 style="color: white;">{{postinfo[2]}}</h1>
-<p>{{postinfo[5]}}</p>
+<div style="background-color: #2c2c2c; display: inline-block; padding: 1vw; border-radius: 5px;">
+    <h1 style="white-space: nowrap;">{{postinfo[2]}}</h1>
+    <span style="display: inline-flex; margin-right: 5%; color:#fefdfd;font-family: Montserrat,sans-serif; font-weight: 500;">
+        {% if postinfo[3] == 1 %}
+        ✅ Resolved : 
+        {% endif %}
+        Post by {{postinfo[5]}} <img src="{{postinfo[6]}}" style="height: 1.2vw; width: 1.2vw; margin-left: 0.5vw; ">
+    </span>
+</div>
+<br>
+<br>
+<div style="background-color: #2c2c2c; display: inline-block; padding: 1vw; border-radius: 5px;">
+    <p>{{postinfo[3]}}</p>
+</div>
 {%endblock%}

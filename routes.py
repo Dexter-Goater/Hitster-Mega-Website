@@ -212,7 +212,7 @@ def helppage(page_ID):
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin[0] == 1:
             isadmin = True
-        postinfo = cur.execute("SELECT PostID,OwnerID,Title,Resolved,PostDate,Content FROM ForumPost WHERE PostID = ?",(page_ID,)).fetchone()
+        postinfo = cur.execute("SELECT PostID,OwnerID,Title,Content,Resolved,OwnerName,OwnerPFP FROM ForumPost WHERE PostID = ?",(page_ID,)).fetchone()
         title = postinfo[2]
         conn.commit()
         conn.close()
