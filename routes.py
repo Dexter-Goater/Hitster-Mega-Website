@@ -38,6 +38,7 @@ google = oauth.register(
 
 isadmin = False
 
+
 class DataStore():
     boxdata = None
 
@@ -213,6 +214,7 @@ def helppage(page_ID):
         if admin[0] == 1:
             isadmin = True
         postinfo = cur.execute("SELECT PostID,OwnerID,Title,Content,Resolved,OwnerName,OwnerPFP FROM ForumPost WHERE PostID = ?",(page_ID,)).fetchone()
+        comments = cur.execute(f"SELECT * FROM ForumComment WHERE CommentID IN (SELECT CommentID FROM ForumComment WHERE ParentID = ?)", (page_ID,)).fetchall()
         title = postinfo[2]
         conn.commit()
         conn.close()
@@ -222,10 +224,37 @@ def helppage(page_ID):
                             user_name=user_name,
                             user_picture=user_picture,
                             isadmin=isadmin,
-                            postinfo=postinfo)
+                            postinfo=postinfo,
+                            comments=comments)
     else:
         return render_template("login_needed.html",login_location=login_location)     
-    
+
+@app.route("/help/newpost")
+def newpost():
+    user_name = None
+    user_picture = None
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    login_location = "Help Forums"    
+    if 'google_token' in session:
+        user = session['google_token'].get('userinfo')
+        if user:
+            user_name = user.get('name')
+            user_picture = user.get('picture')
+        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if admin[0] == 1:
+            isadmin = True
+        title = "New Post"
+        conn.commit()
+        conn.close()
+
+        return render_template("newpost.html",
+                            title=title,
+                            user_name=user_name,
+                            user_picture=user_picture,
+                            isadmin=isadmin,)
+    else:
+        return render_template("login_needed.html",login_location=login_location)      
     
 @app.route("/login")
 def login():
@@ -307,7 +336,22 @@ def reset():
     conn.commit()
     conn.close()
 
+@app.route('/submit', methods=['POST'])
+def submit():
+    user_name = request.form['name']
+    user_email = request.form['email']
 
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    
+    cur.execute(
+        "INSERT INTO users (name, email) VALUES (?, ?)", 
+        (user_name, user_email)
+    )
+    
+    conn.commit()
+    conn.close()
+    
 
 if __name__ == "__main__":
     app.run(debug=True)

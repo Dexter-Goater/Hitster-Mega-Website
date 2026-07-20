@@ -2,7 +2,7 @@
 {%block content%}
 <link rel="stylesheet" href="/static/css/style.css">
 <p>
-<button style="margin-left: 2%; margin-bottom: 1%;margin-top: 0.5%;">Create new post</button>
+<button style="margin-left: 2%; margin-bottom: 1%;margin-top: 0.5%;" onclick="location.href='http://127.0.0.1:5000/help/newpost';">Create new post</button>
 <input 
     type="text" 
     id="postSearch" 
@@ -17,7 +17,6 @@
         <option value="resolved">Resolved</option>
     </select>
 </p>
-
 <div id="postList">
 {%for post in posts%}
     <div class="postItem"
