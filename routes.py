@@ -1,4 +1,4 @@
-from flask import Flask, render_template, abort,session,jsonify,request,redirect,url_for
+from flask import Flask, render_template, abort, session, jsonify, request,redirect,url_for
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import sqlite3
