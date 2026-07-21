@@ -29,4 +29,9 @@
     <br>
     <br>
 {%endfor%}
+<form action="/reply" method="POST">
+    <input type="reply" id="reply" name="reply" required placeholder="Reply" size="50" maxlength="50"></input><br><br>
+    <input type="hidden" name="page_ID" value="{{ page_ID }}">   
+    <button type="submit">Submit</button>
+</form>
 {%endblock%}

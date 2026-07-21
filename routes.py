@@ -42,7 +42,6 @@ isadmin = False
 class DataStore():
     boxdata = None
 
-print(datetime.datetime.now().strftime("%d-%m-%y"))
 @app.route("/")
 def home():
     user_name = None
@@ -225,7 +224,8 @@ def helppage(page_ID):
                             user_picture=user_picture,
                             isadmin=isadmin,
                             postinfo=postinfo,
-                            comments=comments)
+                            comments=comments,
+                            page_ID = page_ID)
     else:
         return render_template("login_needed.html",login_location=login_location)     
 
@@ -338,20 +338,52 @@ def reset():
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    user_name = request.form['name']
-    user_email = request.form['email']
+    post_title = request.form['title']
+    post_content = request.form['content']
+    post_time = datetime.datetime.now().strftime("%d-%m-%y")
 
+    user = session['google_token'].get('userinfo')
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     
+    if user:
+        user_name = user.get('name')
+        user_picture = user.get('picture')
+        user_id = user.get('sub')
     cur.execute(
-        "INSERT INTO users (name, email) VALUES (?, ?)", 
-        (user_name, user_email)
+        "INSERT INTO ForumPost (OwnerID, title, content, PostDate, Ownername, OwnerPFP, Resolved) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+        (user_id, post_title, post_content, post_time, user_name, user_picture, 0)
     )
-    
     conn.commit()
     conn.close()
     
+    return redirect(url_for("help"))
+
+@app.route('/reply', methods=['POST'])
+def reply():
+    comment_content = request.form['reply']
+    page_ID = request.form['page_ID']
+
+    user = session['google_token'].get('userinfo')
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    
+    if user:
+        user_name = user.get('name')
+        user_picture = user.get('picture')
+        user_id = user.get('sub')
+    
+    cur.execute(
+        "INSERT INTO ForumComment (OwnerID, content, ParentID, OwnerName, OwnerPFP) VALUES (?, ?, ?, ?, ?)",
+        (user_id, comment_content, page_ID, user_name, user_picture)
+    )
+    conn.commit()
+    conn.close()
+    return redirect(url_for("help",page_ID=page_ID))
+
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+   

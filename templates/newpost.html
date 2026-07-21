@@ -3,11 +3,9 @@
 <body>
     <h2>Enter User Information</h2>
     <form action="/submit" method="POST">
-        <label for="title" style="color:#fefdfd;font-family: Montserrat,sans-serif; font-weight: 500;">Title : &nbsp; &nbsp;</label>
-        <input type="text" id="title" name="title" required><br><br>
-        
-        <label for="content" style="color:#fefdfd;font-family: Montserrat,sans-serif; font-weight: 500;">Details:</label>
-        <input type="content" id="content" name="content" required><br><br>
+
+        <input type="text" id="title" name="title" required placeholder="Title" size="50" maxlength="50"><br><br>
+        <textarea type="content" id="content" name="content" required placeholder="Text" cols="50" rows="5" style="resize: none;"></textarea><br><br>
         
         <button type="submit">Submit</button>
     </form>
