@@ -117,6 +117,9 @@ def add_song():
             if all(x is not None and x.strip() != "" for x in (song_name, song_year, song_artist)):
                 cur.execute(f"INSERT INTO song (id,name,releaseyear,artist,approved) VALUES (?,?,?,?,?)",(None,song_name,song_year,song_artist,0))
                 show_error_none = False
+                conn.commit()
+                conn.close()
+                return redirect(url_for("home"))
             else:
                 show_error_none = True
 
