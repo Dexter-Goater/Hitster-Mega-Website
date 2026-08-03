@@ -158,6 +158,10 @@ def song_list():
         if admin[0] == 1:
             isadmin = True
         title = "Songs List"
+        genre_rows = cur.execute("SELECT SongID, GenreID FROM GenreSong").fetchall()
+        song_genres = {}
+        for song_id, genre_id in genre_rows:
+            song_genres.setdefault(song_id, []).append(genre_id)
         conn.commit()
         conn.close()
 
@@ -166,7 +170,8 @@ def song_list():
                             user_name=user_name,
                             user_picture=user_picture,
                             isadmin=isadmin,
-                            songs=songs)
+                            songs=songs,
+                            song_genres=song_genres)
     else:
         return render_template("login_needed.html",login_location=login_location)    
     
