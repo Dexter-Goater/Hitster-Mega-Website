@@ -1,0 +1,57 @@
+{%extends "layout.html" %}
+{%block content%}
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+    .container {  display: grid;
+        grid-template-columns: 0.4fr 2fr 0.4fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 50px 0px;
+        grid-auto-flow: row;
+        grid-template-areas:
+            ". Users ."
+            ". Songs .";
+    }
+
+    .Users { grid-area: Users;
+        background-color: #333333;
+    
+    }
+
+    .Songs { grid-area: Songs; 
+        background-color: #333333;
+    
+    }
+</style>
+<div class="container">
+    <div class="Users">
+    <h1>Users</h1>
+    {{users}}
+    {%for song in unnaproved_songs%}
+            <div style="background-color: #2c2c2c; margin-left: 10px; margin-right: 10px; display: flex; align-items: center; padding: 8px;">
+                <img src="/static/cover_art/{{song[0]}}.jpg" style="width: 40px; height: 40px; object-fit: cover;">
+                <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{song[1]}} by {{song[3]}} Released: {{song[2]}}</span>
+                <div style="margin-left: auto; display: flex; gap: 8px;">
+                    <button style="background-color:green;">Approve</button>
+                    <button style="background-color:red;">Deny</button>
+                </div>
+            </div>
+            <br>
+    {%endfor%}
+    </div>
+    <div class="Songs">
+    <h1>Unnaproved Songs</h1>
+    
+    {%for song in unnaproved_songs%}
+            <div style="background-color: #2c2c2c; margin-left: 10px; margin-right: 10px; display: flex; align-items: center; padding: 8px;">
+                <img src="/static/cover_art/{{song[0]}}.jpg" style="width: 40px; height: 40px; object-fit: cover;">
+                <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{song[1]}} by {{song[3]}} Released: {{song[2]}}</span>
+                <div style="margin-left: auto; display: flex; gap: 8px;">
+                    <button style="background-color:green;">Approve</button>
+                    <button style="background-color:red;">Deny</button>
+                </div>
+            </div>
+            <br>
+    {%endfor%}
+    </div>
+</div>
+{%endblock%}

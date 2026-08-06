@@ -49,25 +49,18 @@ class DataStore():
 def home():
     user_name = None
     user_picture = None
+    isadmin = False
     login_location = "Home"
     if 'google_token' in session:
             user = session['google_token'].get('userinfo')
             if user:
                 user_name = user.get('name')
                 user_picture = user.get('picture')
-      
             conn = sqlite3.connect("Hitster.db")
             cur = conn.cursor()
-            if user:
-                admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-                if admin:
-                    if admin[0] == 1:
-                        isadmin = True
-                    else:
-                        isadmin = False
-                else:
-                    isadmin = False
-                
+            admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+            if admin and admin[0] == 1:
+                isadmin = True  
             data = cur.execute("SELECT id from Song WHERE Approved = 1").fetchall()
             id = data[random.randint(0, len(data) - 1)][0]
             res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
@@ -157,6 +150,7 @@ def add_song():
 def song_list():
     user_name = None
     user_picture = None
+    isadmin = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     login_location = "Songs List"
@@ -168,8 +162,8 @@ def song_list():
             user_picture = user.get('picture')
         songs = cur.execute("SELECT id,name,artist,releaseyear FROM song WHERE Approved = 1").fetchall()
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-        if admin[0] == 1:
-            isadmin = True
+        if admin and admin[0] == 1:
+            isadmin = True  
         title = "Songs List"
         genre_rows = cur.execute("SELECT SongID, GenreID FROM GenreSong").fetchall()
         song_genres = {}
@@ -193,6 +187,7 @@ def song_list():
 def help():
     user_name = None
     user_picture = None
+    isadmin = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     login_location = "Help Forums"    
@@ -202,8 +197,8 @@ def help():
             user_name = user.get('name')
             user_picture = user.get('picture')
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-        if admin[0] == 1:
-            isadmin = True
+        if admin and admin[0] == 1:
+            isadmin = True  
         posts = cur.execute("SELECT PostID,OwnerID,Title,Resolved,PostDate,OwnerName,OwnerPFP FROM ForumPost").fetchall()
         title = "Help Forums"
         conn.commit()
@@ -222,6 +217,7 @@ def help():
 def helppage(page_ID):
     user_name = None
     user_picture = None
+    isadmin = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     login_location = "Help Forums"    
@@ -231,8 +227,8 @@ def helppage(page_ID):
             user_name = user.get('name')
             user_picture = user.get('picture')
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-        if admin[0] == 1:
-            isadmin = True
+        if admin and admin[0] == 1:
+            isadmin = True  
         postinfo = cur.execute("SELECT PostID,OwnerID,Title,Content,Resolved,OwnerName,OwnerPFP FROM ForumPost WHERE PostID = ?",(page_ID,)).fetchone()
         comments = cur.execute(f"SELECT * FROM ForumComment WHERE CommentID IN (SELECT CommentID FROM ForumComment WHERE ParentID = ?)", (page_ID,)).fetchall()
         title = postinfo[2]
@@ -254,6 +250,7 @@ def helppage(page_ID):
 def newpost():
     user_name = None
     user_picture = None
+    isadmin = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     login_location = "Help Forums"    
@@ -263,8 +260,8 @@ def newpost():
             user_name = user.get('name')
             user_picture = user.get('picture')
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-        if admin[0] == 1:
-            isadmin = True
+        if admin and admin[0] == 1:
+            isadmin = True     
         title = "New Post"
         conn.commit()
         conn.close()
@@ -275,7 +272,42 @@ def newpost():
                             user_picture=user_picture,
                             isadmin=isadmin,)
     else:
-        return render_template("login_needed.html",login_location=login_location)      
+        return render_template("login_needed.html",login_location=login_location) 
+
+
+@app.route("/admin")     
+def admin():
+    user_name = None
+    user_picture = None
+    isadmin = False
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    login_location = "Help Forums"    
+    if 'google_token' in session:
+        user = session['google_token'].get('userinfo')
+        if user:
+            user_name = user.get('name')
+            user_picture = user.get('picture')
+        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if admin and admin[0] == 1:
+            isadmin = True
+            users = cur.execute("SELECT * FROM Users").fetchall()
+            unnaproved_songs = cur.execute("SELECT * from Song WHERE Approved = 0").fetchall()
+            title = "New Post"
+            conn.commit()
+            conn.close()
+
+            return render_template("admin.html",
+                                title=title,
+                                user_name=user_name,
+                                user_picture=user_picture,
+                                isadmin=isadmin,
+                                users=users,
+                                unnaproved_songs=unnaproved_songs)
+        else:
+            abort(403)
+    else:
+        return render_template("login_needed.html",login_location=login_location)    
     
 @app.route("/login")
 def login():
