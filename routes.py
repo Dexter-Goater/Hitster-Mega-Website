@@ -1,4 +1,4 @@
-from flask import Flask, render_template, abort, session, jsonify, request,redirect,url_for
+from flask import Flask, render_template, abort, session, jsonify, request,redirect,url_for,flash
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import sqlite3
@@ -9,6 +9,7 @@ import spotipy
 import webbrowser
 import requests
 import datetime
+from werkzeug.utils import secure_filename
 load_dotenv()
 username = 'wqgfeis2dlz27xoecb7h5oqfa'
 clientID = os.getenv("SPOTIFY_CLIENT_ID")
@@ -37,6 +38,8 @@ google = oauth.register(
 )
 
 isadmin = False
+app.config['COVER_FOLDER'] = os.path.join(app.root_path, 'static', 'cover_art')
+os.makedirs(app.config['COVER_FOLDER'], exist_ok=True)
 
 
 class DataStore():
@@ -96,48 +99,58 @@ def home():
         return render_template("login_needed.html",login_location=login_location)
     
 
-@app.route("/add_song", methods=["GET","POST"])
+@app.route("/add_song", methods=["GET", "POST"])
 def add_song():
     user_name = None
     user_picture = None
     show_error_none = False
-    conn = sqlite3.connect("Hitster.db")
-    cur = conn.cursor()
+    isadmin = False
     login_location = "add a song"
-
     if 'google_token' in session:
         user = session['google_token'].get('userinfo')
         if user:
             user_name = user.get('name')
             user_picture = user.get('picture')
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
         if request.method == "POST":
             song_name = request.form.get("sname")
             song_year = request.form.get("syear")
             song_artist = request.form.get("sartist")
             if all(x is not None and x.strip() != "" for x in (song_name, song_year, song_artist)):
-                cur.execute(f"INSERT INTO song (id,name,releaseyear,artist,approved) VALUES (?,?,?,?,?)",(None,song_name,song_year,song_artist,0))
-                show_error_none = False
+                cur.execute(
+                    "INSERT INTO song (name, releaseyear, artist, approved) VALUES (?, ?, ?, ?)",
+                    (song_name, song_year, song_artist, 0)
+                )
+                song_id = cur.lastrowid
+                cover_file = request.files.get("scover")
+                if cover_file and cover_file.filename != '':
+                    _, ext = os.path.splitext(cover_file.filename)
+                    if not ext:
+                        ext = '.jpg'
+                    new_filename = f"{song_id}{ext}"
+                    cover_path = os.path.join(app.config['COVER_FOLDER'], new_filename)
+                    cover_file.save(cover_path)
                 conn.commit()
                 conn.close()
                 return redirect(url_for("home"))
             else:
                 show_error_none = True
-
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-        if admin[0] == 1:
-            isadmin = True
+        if admin and admin[0] == 1:
+            isadmin = True     
         title = "Add a song"
-        conn.commit()
         conn.close()
-
-        return render_template("add_song.html",
-                            title=title,
-                            user_name=user_name,
-                            user_picture=user_picture,
-                            show_error_none=show_error_none,
-                            isadmin=isadmin)
+        return render_template(
+            "add_song.html",
+            title=title,
+            user_name=user_name,
+            user_picture=user_picture,
+            show_error_none=show_error_none,
+            isadmin=isadmin
+        )
     else:
-        return render_template("login_needed.html",login_location=login_location)
+        return render_template("login_needed.html", login_location=login_location)
     
 
 @app.route("/songlist")

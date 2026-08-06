@@ -1,13 +1,15 @@
 {%extends "layout.html" %}
 {%block content%}
 <style src="/static/css/style.css"></style>
-<form action="{{ url_for("add_song")}}" method="post">
+<form action="{{ url_for("add_song")}}" method="post" enctype="multipart/form-data">
     <h2>Song Name</h2>
     <input type="text" id="songname" name="sname" placeholder="Song name" required maxlength="100">
     <h2>Release Year</h2>
     <input type="int" id="songyear" name="syear" placeholder="Release year" required maxlength="4" minlength="4">
     <h2>Artist</h2>
     <input type="text" id="artist" name="sartist" placeholder="Artist" required maxlength="100">
+    <h2>Upload Album Cover</h2>
+    <input type="file" id="imageUpload" name="scover" accept=".jpg">
     <br>
     <br>
     <button type="submit">Submit</button>
