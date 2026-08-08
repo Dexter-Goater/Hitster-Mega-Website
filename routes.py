@@ -45,6 +45,7 @@ os.makedirs(app.config['COVER_FOLDER'], exist_ok=True)
 class DataStore():
     boxdata = None
 
+
 @app.route("/")
 def home():
     user_name = None
@@ -52,36 +53,37 @@ def home():
     isadmin = False
     login_location = "Home"
     if 'google_token' in session:
-            user = session['google_token'].get('userinfo')
-            if user:
-                user_name = user.get('name')
-                user_picture = user.get('picture')
-            conn = sqlite3.connect("Hitster.db")
-            cur = conn.cursor()
-            banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-            if banned and banned[0] == 1:
-                return render_template("banned.html",
-                                    banned=banned) 
-            admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-            if admin and admin[0] == 1:
-                isadmin = True  
-            data = cur.execute("SELECT id from Song WHERE Approved = 1").fetchall()
-            id = data[random.randint(0, len(data) - 1)][0]
-            res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
-            name = res[0]
-            artist = res[0][1]
-            year = res[0][2]
-            search_song = f"{name[0]}"
-            results = spotifyObject.search(f"q=track:{name}%20artist:{artist}%20year:{year}")
-            songs_dict = results['tracks']
-            song_items = songs_dict['items']
-            song = song_items[0]['uri']
-            boxsong = cur.execute("SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
-            title = "Home"
-            conn.commit()
-            conn.close()
+        user = session['google_token'].get('userinfo')
+        if user:
+            user_name = user.get('name')
+            user_picture = user.get('picture')
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if banned and banned[0] == 1:
+            return render_template("banned.html",
+                                   banned=banned) 
+        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if admin and admin[0] == 1:
+            isadmin = True  
+        data = cur.execute("SELECT id from Song WHERE Approved = 1").fetchall()
+        id = data[random.randint(0, len(data) - 1)][0]
+        res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
+        name = res[0]
+        song_title = name[0]
+        artist = res[0][1]
+        year = res[0][2]
+        search_song = f"{name[0]}"
+        results = spotifyObject.search(f"q=track:{song_title}%20artist:{artist}%20year:{year}")
+        songs_dict = results['tracks']
+        song_items = songs_dict['items']
+        song = song_items[0]['uri']
+        boxsong = cur.execute("SELECT boxes.boxid, song.* FROM boxes JOIN song ON boxes.songid = song.id").fetchall()
+        title = "Home"
+        conn.commit()
+        conn.close()
 
-            return render_template("home.html",
+        return render_template("home.html",
                                 title=title,
                                 song=song,
                                 name=name,
@@ -397,27 +399,23 @@ def logout():
 @app.route('/process-data', methods=['POST'])
 def process_data():
     conn = sqlite3.connect("Hitster.db")
-    cur = conn.cursor()
-    data = request.json['data']
-    print(data)
-    result = {k: v[0].split('\n')[0] for k, v in data.items() if v}
-    print(result)
-    
+    cur = conn.cursor() 
+    payload = request.json
+    data = payload.get('data', {})
     song_ids = {}
-    for box, name in result.items():
-        row = cur.execute("SELECT id FROM song WHERE name = ?", (name,)).fetchone()
-        song_ids[box] = row[0] if row else None
-    
-    cur.execute("UPDATE boxes SET songid = NULL")
+    for box, songs in data.items():
+        if songs and len(songs) > 0:
+            raw_text = songs[0]
+            row = cur.execute("SELECT id FROM song WHERE name = ?", (raw_text,)).fetchone()
+            if row:
+                song_ids[box] = row[0]
+    cur.execute("DELETE FROM boxes")
     for box, song_id in song_ids.items():
         if song_id is not None:
-            cur.execute("UPDATE boxes SET songid = ? WHERE boxid = ?", (song_id, box))
-    
+            cur.execute("INSERT INTO boxes (boxid, songid) VALUES (?, ?)", (box, song_id))
     conn.commit()
     conn.close()
-    print(song_ids)
-    DataStore.boxdata = song_ids
-    return jsonify({'result': result, 'song_ids': song_ids})
+    return jsonify({'result': 'success', 'song_ids': song_ids})
 
 @app.route('/reset', methods=['POST'])
 def reset():

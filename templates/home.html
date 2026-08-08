@@ -1,91 +1,142 @@
 {%extends "layout.html" %}
 {%block content%}
-<style src="/static/css/style.css"></style>
+<link rel="stylesheet" href="/static/css/style.css">
 <br>
-
-<a href="{{song}}">Song Link</a>
+<a href="{{song}}" target="_blank">Guess Song Link</a>
 <br>
 <br>
-<!-- <button onclick="toggleElement()">Show/Hide Song</button> -->
-<div class="boxes">
-{% for i in range(1, 11) %}
-<div class="box" id="box{{ i }}">
-  {% for song in boxsong %}
-    {% if song[0] == 'box' ~ i %}
-    <p id="text{{ i }}" class="boxText" draggable="true">
-      {{ song[2] }} <br>by {{ song[4] }} <br> {{ song[3] }}
-    </p>
-    {% endif %}
+<div class="timeline-grid">
+  {% for i in range(1, 11) %}
+  <div class="timeline-column">
+    <div class="box" id="box_top_{{ i }}">
+      {% for song in boxsong %}
+        {% if song[0] == 'box_top_' ~ i %}
+        <div id="text_top_{{ i }}" class="boxText" draggable="true" data-year="{{ song[3] }}">
+          <span class="song-info">{{ song[2] }} <br>by {{ song[4] }} <br> {{ song[3] }}</span>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="box" id="box{{ i }}">
+      {% for song in boxsong %}
+        {% if song[0] == 'box' ~ i %}
+        <div id="text{{ i }}" class="boxText" draggable="true" data-year="{{ song[3] }}">
+          <span class="song-info">{{ song[2] }} <br>by {{ song[4] }} <br> {{ song[3] }}</span>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="box" id="box_bot_{{ i }}">
+      {% for song in boxsong %}
+        {% if song[0] == 'box_bot_' ~ i %}
+        <div id="text_bot_{{ i }}" class="boxText" draggable="true" data-year="{{ song[3] }}">
+          <span class="song-info">{{ song[2] }} <br>by {{ song[4] }} <br> {{ song[3] }}</span>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    
+  </div>
   {% endfor %}
 </div>
-{% endfor %}
-</div>
 <br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-
-
-<button onClick="resetAllData()" style="float: right; margin-left: 10px; margin-right: -1%;">Reset</button>
-<button onClick="logAllBoxData()" style="float: right;" >Submit</button>
-<br>
-
+<button onClick="resetAllData()" style="float: right; margin-left: 10px; margin-right: 2%;">Reset</button>
+<button onClick="validateAndSubmit()" style="float: right;">Submit</button>
 <p>{{boxdata}}</p>
-
-
-
-<p class="song_info">{{search_song}} by {{artist}}</p>
-<h1 class="song_info">{{year}}</h1>
-<br>
-<h2>box where guesses appear</h2>
+<h2>Box where guesses appear</h2>
 <div class="box" id="boxGuess">  
-  <p id="text1" class="boxText" draggable="true" >{{name[0]}} <br>by {{artist}} <br> {{year}}
-</p></div>
+  <div id="guessItem" class="boxText" draggable="true" data-year="{{year}}">
+    <!-- Only the NEW song gets the cover art and hidden text -->
+    <img src="/static/Cover.jpg" class="cover-art" alt="Cover Art">
+    <span class="song-info hidden">{{name[0]}} <br>by {{artist}} <br> {{year}}</span>
+  </div>
+</div>
 <script src="/static/javascript/drag.js"></script>
-
 <script>
-window.onload = toggleElement()
-function toggleElement(){
-    const elements = document.querySelectorAll(".song_info");
-    elements.forEach(element=>{
-    element.hidden = !element.hidden;
-    });
-}  
-
-function logAllBoxData() {
-    const data = {};
-
-    for (let i = 1; i <= 10; i++) {
-      const box = document.getElementById(`box${i}`);
-      const texts = box.querySelectorAll('.boxText');
-      data[`box${i}`] = Array.from(texts).map(p => p.innerText.trim());
+function validateAndSubmit() {
+  const guessItem = document.getElementById('guessItem');
+  const guessBox = document.getElementById('boxGuess');
+  if (guessBox && guessItem && guessBox.contains(guessItem)) {
+    alert("Please drag the song onto the timeline before submitting!");
+    return; 
+  }
+  let isValid = true;
+  let lastYear = -1;
+  const data = {};
+  for (let i = 1; i <= 10; i++) {
+    const topBox = document.getElementById(`box_top_${i}`);
+    const midBox = document.getElementById(`box${i}`);
+    const botBox = document.getElementById(`box_bot_${i}`);
+    let colSongs = [];
+    if (topBox) colSongs.push(...topBox.querySelectorAll('.boxText'));
+    if (midBox) colSongs.push(...midBox.querySelectorAll('.boxText'));
+    if (botBox) colSongs.push(...botBox.querySelectorAll('.boxText'));
+    if (colSongs.length > 0) {
+      let colYear = parseInt(colSongs[0].getAttribute('data-year'));
+      for (let song of colSongs) {
+        if (parseInt(song.getAttribute('data-year')) !== colYear) {
+          handleIncorrectGuess();
+          return;
+        }
+      }
+      if (lastYear !== -1 && colYear <= lastYear) {
+        handleIncorrectGuess();
+        return;
+      }
+      lastYear = colYear;
+      data[`box_top_${i}`] = Array.from(topBox.querySelectorAll('.boxText')).map(p => p.querySelector('.song-info').innerHTML.split('<br>')[0].trim());
+      data[`box${i}`] = Array.from(midBox.querySelectorAll('.boxText')).map(p => p.querySelector('.song-info').innerHTML.split('<br>')[0].trim());
+      data[`box_bot_${i}`] = Array.from(botBox.querySelectorAll('.boxText')).map(p => p.querySelector('.song-info').innerHTML.split('<br>')[0].trim());
     }
-    fetch('/process-data', {
+  }
+  alert("Correct! The song has been added to your timeline.");
+  document.querySelectorAll('.song-info.hidden').forEach(el => el.classList.remove('hidden'));
+  document.querySelectorAll('.cover-art').forEach(el => el.style.display = 'none');
+  fetch('/process-data', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({data: data})
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: data, status: 'correct' })
   })
-  .then(response => response.text())
-  .then(result => {
-    console.log();
+  .then(() => {
+    setTimeout(() => { window.location.reload(); }, 2000);
+  })
+  .catch(error => console.error('Error:', error));
+}
+function handleIncorrectGuess() {
+  alert("Incorrect placement!");
+  const guessItem = document.getElementById('guessItem');
+  const guessBox = document.getElementById('boxGuess');
+  if (guessItem && guessBox && !guessBox.contains(guessItem)) {
+    guessBox.appendChild(guessItem);
+  }
+  const validData = {};
+  for (let i = 1; i <= 10; i++) {
+    const topBox = document.getElementById(`box_top_${i}`);
+    const midBox = document.getElementById(`box${i}`);
+    const botBox = document.getElementById(`box_bot_${i}`);
+    const getSongNames = (box) => {
+      if (!box) return [];
+      return Array.from(box.querySelectorAll('.boxText'))
+        .filter(p => p.id !== 'guessItem')
+        .map(p => p.querySelector('.song-info').innerHTML.split('<br>')[0].trim());
+    };
+    validData[`box_top_${i}`] = getSongNames(topBox);
+    validData[`box${i}`] = getSongNames(midBox);
+    validData[`box_bot_${i}`] = getSongNames(botBox);
+  }
+  fetch('/process-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: validData, status: 'incorrect' })
+  })
+  .then(() => {
     window.location.reload();
   })
-  .catch(error => {
-    console.error('Error:', error);
-  });
-  }
-
-function resetAllData() {
-  fetch('/reset', {
-    method: 'POST',
-  })
-  window.location.reload();
+  .catch(error => console.error('Error:', error));
 }
-
+function resetAllData() {
+  fetch('/reset', { method: 'POST' })
+  .then(() => window.location.reload());
+}
 </script>
-{%endblock%}  
+{%endblock%}
