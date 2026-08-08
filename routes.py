@@ -58,6 +58,9 @@ def home():
                 user_picture = user.get('picture')
             conn = sqlite3.connect("Hitster.db")
             cur = conn.cursor()
+            banned = cur.execute("SELECT Isbanned FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+            if banned and banned[0] == 1:
+                return render_template("banned.html")
             admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
             if admin and admin[0] == 1:
                 isadmin = True  
@@ -331,8 +334,8 @@ def authorized():
     now = datetime.datetime.now().strftime("%d-%m-%y")
 
     cur.execute("""
-        INSERT INTO users (id, name, email, profile_pic, date_joined)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO users (id, name, email, profile_pic, date_joined, Isadmin, Isbanned)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
             email = excluded.email,
@@ -342,7 +345,10 @@ def authorized():
         user.get('name'),
         user.get('email'),
         user.get('picture'),
-        now
+        now,
+        0,
+        0
+        
     ))
 
     conn.commit()
@@ -434,6 +440,76 @@ def reply():
     conn.close()
     return redirect(url_for("help",page_ID=page_ID))
 
+@app.route('/unban', methods=['POST'])
+def unban():
+    user_id = request.form.get('user_id')
+    if user_id:
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        cur.execute("UPDATE Users SET Isbanned = 0 WHERE id = ?", (user_id,))
+        cur.execute("UPDATE Users SET Banreason = Null WHERE id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/ban', methods=['POST'])
+def ban():
+    user_id = request.form.get('user_id')
+    ban_reason = request.form.get('ban_reason')  
+    if user_id and ban_reason:
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE Users SET Isbanned = 1, BanReason = ? WHERE id = ?", 
+            (ban_reason, user_id)
+        ) 
+        conn.commit()
+        conn.close()
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/promoteadmin', methods=['POST'])
+def promoteadmin():
+    user_id = request.form.get('user_id')
+    if user_id:
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        cur.execute("UPDATE Users SET Isadmin = 1 WHERE id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/demoteadmin', methods=['POST'])
+def demoteadmin():
+    user_id = request.form.get('user_id')
+    if user_id:
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        cur.execute("UPDATE Users SET Isadmin = 0 WHERE id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/approvesong', methods=['POST'])
+def approvesong():
+    song_id = request.form.get('song_id')
+    if song_id:
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        cur.execute("UPDATE Song SET Approved = 1 WHERE id = ?", (song_id,))
+        conn.commit()
+        conn.close()
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/denysong', methods=['POST'])
+def denysong():
+    song_id = request.form.get('song_id')
+    if song_id:
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        cur.execute("DELETE FROM Song WHERE id = ?", (song_id,))
+        conn.commit()
+        conn.close()
+    return redirect(request.referrer or url_for('index'))
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,7 +1,7 @@
 {%extends "layout.html" %}
 {%block content%}
-<style src="/static/css/style.css"></style>
-<form action="{{ url_for("add_song")}}" method="post" enctype="multipart/form-data">
+<link rel="stylesheet" href="/static/css/style.css">
+<form action="{{ url_for('add_song') }}" method="post" enctype="multipart/form-data">
     <h2>Song Name</h2>
     <input type="text" id="songname" name="sname" placeholder="Song name" required maxlength="100">
     <h2>Release Year</h2>
@@ -9,15 +9,34 @@
     <h2>Artist</h2>
     <input type="text" id="artist" name="sartist" placeholder="Artist" required maxlength="100">
     <h2>Upload Album Cover</h2>
-    <input type="file" id="imageUpload" name="scover" accept=".jpg">
-    <br>
-    <br>
+    <input type="file" id="imageUpload" name="scover" accept=".jpg, .jpeg, .png" onchange="previewImage(event)">
+    <br><br>
+    <div id="previewContainer" style="display: none; margin-bottom: 15px;">
+        <p style="color: #fff;">Preview:</p>
+        <img id="imagePreview" src="#" alt="Album Cover Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; object-fit: cover;">
+    </div>
     <button type="submit">Submit</button>
 </form>
 
 <p class="error" {% if not show_error_none %}hidden{% endif %}>Value can not be blank</p>
 
 <script>
+function previewImage(event) {
+    const file = event.target.files[0];
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('imagePreview');
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewContainer.style.display = 'block'; // Show preview block
+        };
+        reader.readAsDataURL(file); // Convert file to base64 string
+    } else {
+        previewImage.src = '#';
+        previewContainer.style.display = 'none'; // Hide if file unselected
+    }
+}
 function toggleElement(){
     const elements = document.querySelectorAll(".error");
     elements.forEach(element => {

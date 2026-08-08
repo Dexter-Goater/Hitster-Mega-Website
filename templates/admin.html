@@ -4,12 +4,13 @@
 <style>
     .container {  display: grid;
         grid-template-columns: 0.4fr 2fr 0.4fr;
-        grid-template-rows: 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
         gap: 50px 0px;
         grid-auto-flow: row;
         grid-template-areas:
             ". Users ."
-            ". Songs .";
+            ". Songs ."
+            ". BannedUsers .";
     }
 
     .Users { grid-area: Users;
@@ -21,21 +22,40 @@
         background-color: #333333;
     
     }
+    .BannedUsers { grid-area: BannedUsers;
+        background-color: #333333;
+    }
 </style>
 <div class="container">
     <div class="Users">
     <h1>Users</h1>
-    {{users}}
-    {%for song in unnaproved_songs%}
+    {%for user in users%}
+        {%if user[6] == 0%}
             <div style="background-color: #2c2c2c; margin-left: 10px; margin-right: 10px; display: flex; align-items: center; padding: 8px;">
-                <img src="/static/cover_art/{{song[0]}}.jpg" style="width: 40px; height: 40px; object-fit: cover;">
-                <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{song[1]}} by {{song[3]}} Released: {{song[2]}}</span>
+                <img src="{{user[3]}}" style="width: 40px; height: 40px; object-fit: cover;">
+                <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{user[1]}}. Joined {{user[5]}}</span>
                 <div style="margin-left: auto; display: flex; gap: 8px;">
-                    <button style="background-color:green;">Approve</button>
-                    <button style="background-color:red;">Deny</button>
+                    {%if user[4] == 0%}
+                        <form action="/promoteadmin" method="POST">
+                            <input type="hidden" name="user_id" value="{{user[0]}}">
+                            <button type="submit" style="background-color:green;">Promote to Admin</button>
+                        </form>
+                    {%endif%}
+                    {%if user[4] == 1%}
+                        <form action="/demoteadmin" method="POST">
+                            <input type="hidden" name="user_id" value="{{user[0]}}">
+                            <button type="submit" style="background-color: orange;">Demote from Admin</button>
+                        </form>
+                    {%endif%}
+                    <form action="/ban" method="POST" onsubmit="return handleBan(event)">
+                        <input type="hidden" name="user_id" value="{{ user[0] }}">
+                        <input type="hidden" name="ban_reason" id="ban_reason_{{ user[0] }}">
+                        <button type="submit" style="background-color: red;">Ban</button>
+                    </form>
                 </div>
             </div>
             <br>
+        {%endif%}
     {%endfor%}
     </div>
     <div class="Songs">
@@ -46,12 +66,50 @@
                 <img src="/static/cover_art/{{song[0]}}.jpg" style="width: 40px; height: 40px; object-fit: cover;">
                 <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{song[1]}} by {{song[3]}} Released: {{song[2]}}</span>
                 <div style="margin-left: auto; display: flex; gap: 8px;">
-                    <button style="background-color:green;">Approve</button>
-                    <button style="background-color:red;">Deny</button>
+                    <form action="/approvesong" method="POST">
+                        <input type="hidden" name="song_id" value="{{song[0]}}">
+                        <button type="submit" style="background-color:green;">Approve</button>
+                    </form>
+                    <form action="/denysong" method="POST">
+                        <input type="hidden" name="song_id" value="{{song[0]}}">
+                        <button type="submit" style="background-color: red;">Deny</button>
+                    </form>
                 </div>
             </div>
             <br>
     {%endfor%}
     </div>
+    <div class="BannedUsers">
+    <h1> Banned Users</h1>
+    {%for user in users%}
+        {%if user[6] == 1%}
+            <div style="background-color: #2c2c2c; margin-left: 10px; margin-right: 10px; display: flex; align-items: center; padding: 8px;">
+                <img src="{{user[3]}}" style="width: 40px; height: 40px; object-fit: cover;">
+                <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{user[1]}}. Banned for {{user[7]}}</span>
+                <div style="margin-left: auto; display: flex; gap: 8px;">
+                    <form action="/unban" method="POST">
+                        <input type="hidden" name="user_id" value="{{ user[0] }}">
+                        <button type="submit" style="background-color:green;">Unban</button>
+                    </form>
+                        
+            </div>
+            <br>
+        {%endif%}
+    {%endfor%}
+    </div>
 </div>
+<script>
+    function handleBan(event) {
+        const form = event.target;
+        const reasonInput = form.querySelector('input[name="ban_reason"]');
+        const reason = prompt("Enter the reason for banning this user:");
+        if (!reason || reason.trim() === "") {
+            alert("A ban reason is required.");
+            return false;
+        }
+        
+        reasonInput.value = reason.trim();
+        return true; 
+    }
+</script>
 {%endblock%}
