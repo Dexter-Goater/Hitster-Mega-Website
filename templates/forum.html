@@ -28,12 +28,21 @@
         <a class="post-item"
         href="/help/{{post[0]}}"
         style="justify-content: left; align-items: center; margin-left: 1%; margin-top: 2%; display: inline;">{{post[2]}} </a>
-        <span style="display: inline-flex; float: right;margin-right: 5%; color:#fefdfd;font-family: Montserrat,sans-serif; font-weight: 500;">
+        <span style="display: inline-flex; float: right;margin-right: 0.5%; color:#fefdfd;font-family: Montserrat,sans-serif; font-weight: 500;">
         {% if post[3] == 1 %}
         ✅ Resolved : 
         {% endif %}
         Post by {{post[5]}} <img src="{{post[6]}}" style="height: 1.2vw; width: 1.2vw; margin-left: 0.5vw; ">
+        <div style="margin-left: 10px; display: flex; gap: 8px;">
+            {%if isadmin%}
+                <form action="/deletepost" method="POST">
+                    <input type="hidden" name="post_id" value="{{post[0]}}">
+                    <button type="submit" style="background-color:red;">Delete Post</button>
+                </form>
+            {%endif%}
+        </div>
         </span>
+
     </div>
 {%endfor%}
 </div>

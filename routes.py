@@ -58,9 +58,10 @@ def home():
                 user_picture = user.get('picture')
             conn = sqlite3.connect("Hitster.db")
             cur = conn.cursor()
-            banned = cur.execute("SELECT Isbanned FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+            banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
             if banned and banned[0] == 1:
-                return render_template("banned.html")
+                return render_template("banned.html",
+                                    banned=banned) 
             admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
             if admin and admin[0] == 1:
                 isadmin = True  
@@ -113,12 +114,18 @@ def add_song():
             song_name = request.form.get("sname")
             song_year = request.form.get("syear")
             song_artist = request.form.get("sartist")
+            selected_genres = request.form.getlist("genres")
             if all(x is not None and x.strip() != "" for x in (song_name, song_year, song_artist)):
                 cur.execute(
                     "INSERT INTO song (name, releaseyear, artist, approved) VALUES (?, ?, ?, ?)",
                     (song_name, song_year, song_artist, 0)
                 )
                 song_id = cur.lastrowid
+                for genre_id in selected_genres:
+                    cur.execute(
+                        "INSERT INTO genresong (songid, genreid) VALUES (?, ?)",
+                        (song_id, genre_id)
+                    )
                 cover_file = request.files.get("scover")
                 if cover_file and cover_file.filename != '':
                     _, ext = os.path.splitext(cover_file.filename)
@@ -132,9 +139,14 @@ def add_song():
                 return redirect(url_for("home"))
             else:
                 show_error_none = True
+        genres = cur.execute("SELECT Genreid, name FROM Genre").fetchall()
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True     
+            isadmin = True
+        banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if banned and banned[0] == 1:
+            conn.close()
+            return render_template("banned.html", banned=banned)    
         title = "Add a song"
         conn.close()
         return render_template(
@@ -143,11 +155,11 @@ def add_song():
             user_name=user_name,
             user_picture=user_picture,
             show_error_none=show_error_none,
-            isadmin=isadmin
+            isadmin=isadmin,
+            genres=genres
         )
     else:
         return render_template("login_needed.html", login_location=login_location)
-    
 
 @app.route("/songlist")
 def song_list():
@@ -167,6 +179,10 @@ def song_list():
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
             isadmin = True  
+        banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if banned and banned[0] == 1:
+            return render_template("banned.html",
+                                   banned=banned) 
         title = "Songs List"
         genre_rows = cur.execute("SELECT SongID, GenreID FROM GenreSong").fetchall()
         song_genres = {}
@@ -202,6 +218,10 @@ def help():
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
             isadmin = True  
+        banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if banned and banned[0] == 1:
+            return render_template("banned.html",
+                                   banned=banned)   
         posts = cur.execute("SELECT PostID,OwnerID,Title,Resolved,PostDate,OwnerName,OwnerPFP FROM ForumPost").fetchall()
         title = "Help Forums"
         conn.commit()
@@ -231,7 +251,11 @@ def helppage(page_ID):
             user_picture = user.get('picture')
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True  
+            isadmin = True
+        banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if banned and banned[0] == 1:
+            return render_template("banned.html",
+                                   banned=banned)   
         postinfo = cur.execute("SELECT PostID,OwnerID,Title,Content,Resolved,OwnerName,OwnerPFP FROM ForumPost WHERE PostID = ?",(page_ID,)).fetchone()
         comments = cur.execute(f"SELECT * FROM ForumComment WHERE CommentID IN (SELECT CommentID FROM ForumComment WHERE ParentID = ?)", (page_ID,)).fetchall()
         title = postinfo[2]
@@ -264,7 +288,11 @@ def newpost():
             user_picture = user.get('picture')
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True     
+            isadmin = True
+        banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        if banned and banned[0] == 1:
+            return render_template("banned.html",
+                                   banned=banned)       
         title = "New Post"
         conn.commit()
         conn.close()
@@ -294,6 +322,10 @@ def admin():
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
             isadmin = True
+            banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+            if banned and banned[0] == 1:
+                return render_template("banned.html",
+                                    banned=banned)  
             users = cur.execute("SELECT * FROM Users").fetchall()
             unnaproved_songs = cur.execute("SELECT * from Song WHERE Approved = 0").fetchall()
             title = "New Post"
@@ -506,7 +538,24 @@ def denysong():
     if song_id:
         conn = sqlite3.connect("Hitster.db")
         cur = conn.cursor()
+        cur.execute("DELETE FROM genresong WHERE songid = ?", (song_id,))
         cur.execute("DELETE FROM Song WHERE id = ?", (song_id,))
+        conn.commit()
+        conn.close()
+        cover_folder = app.config.get('COVER_FOLDER')
+        image_filename = f"{song_id}.jpg"
+        image_path = os.path.join(cover_folder, image_filename)
+        if os.path.exists(image_path):
+            os.remove(image_path)
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/deletepost', methods=['POST'])
+def deletepost():
+    post_id = request.form.get('post_id')  
+    if post_id:
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        cur.execute("DELETE FROM ForumPost WHERE id = ?", (post_id,)) 
         conn.commit()
         conn.close()
     return redirect(request.referrer or url_for('index'))
