@@ -11,7 +11,7 @@
     <div class="box" id="box_top_{{ i }}">
       {% for song in boxsong %}
         {% if song[0] == 'box_top_' ~ i %}
-        <div id="text_top_{{ i }}" class="boxText" draggable="true" data-year="{{ song[3] }}">
+        <div id="text_top_{{ i }}" class="boxText" draggable="true" data-year="{{ song[3] }}" data-songid="{{ song[1] }}">
           <span class="song-info">{{ song[2] }} <br>by {{ song[4] }} <br> {{ song[3] }}</span>
         </div>
         {% endif %}
@@ -20,7 +20,7 @@
     <div class="box" id="box{{ i }}">
       {% for song in boxsong %}
         {% if song[0] == 'box' ~ i %}
-        <div id="text{{ i }}" class="boxText" draggable="true" data-year="{{ song[3] }}">
+        <div id="text{{ i }}" class="boxText" draggable="true" data-year="{{ song[3] }}" data-songid="{{ song[1] }}">
           <span class="song-info">{{ song[2] }} <br>by {{ song[4] }} <br> {{ song[3] }}</span>
         </div>
         {% endif %}
@@ -29,7 +29,7 @@
     <div class="box" id="box_bot_{{ i }}">
       {% for song in boxsong %}
         {% if song[0] == 'box_bot_' ~ i %}
-        <div id="text_bot_{{ i }}" class="boxText" draggable="true" data-year="{{ song[3] }}">
+        <div id="text_bot_{{ i }}" class="boxText" draggable="true" data-year="{{ song[3] }}" data-songid="{{ song[1] }}">
           <span class="song-info">{{ song[2] }} <br>by {{ song[4] }} <br> {{ song[3] }}</span>
         </div>
         {% endif %}
@@ -45,11 +45,11 @@
 <p>{{boxdata}}</p>
 <h2>Box where guesses appear</h2>
 <div class="box" id="boxGuess">  
-  <div id="guessItem" class="boxText" draggable="true" data-year="{{year}}">
-    <!-- Only the NEW song gets the cover art and hidden text -->
+  <div id="guessItem" class="boxText" draggable="true" data-year="{{year}}" data-songid="{{song_id}}"> 
     <img src="/static/Cover.jpg" class="cover-art" alt="Cover Art">
     <span class="song-info hidden">{{name[0]}} <br>by {{artist}} <br> {{year}}</span>
   </div>
+</div>
 </div>
 <script src="/static/javascript/drag.js"></script>
 <script>
@@ -84,9 +84,9 @@ function validateAndSubmit() {
         return;
       }
       lastYear = colYear;
-      data[`box_top_${i}`] = Array.from(topBox.querySelectorAll('.boxText')).map(p => p.querySelector('.song-info').innerHTML.split('<br>')[0].trim());
-      data[`box${i}`] = Array.from(midBox.querySelectorAll('.boxText')).map(p => p.querySelector('.song-info').innerHTML.split('<br>')[0].trim());
-      data[`box_bot_${i}`] = Array.from(botBox.querySelectorAll('.boxText')).map(p => p.querySelector('.song-info').innerHTML.split('<br>')[0].trim());
+      data[`box_top_${i}`] = Array.from(topBox.querySelectorAll('.boxText')).map(p => p.getAttribute('data-songid'));
+      data[`box${i}`] = Array.from(midBox.querySelectorAll('.boxText')).map(p => p.getAttribute('data-songid'));
+      data[`box_bot_${i}`] = Array.from(botBox.querySelectorAll('.boxText')).map(p => p.getAttribute('data-songid'));
     }
   }
   alert("Correct! The song has been added to your timeline.");
@@ -103,26 +103,18 @@ function validateAndSubmit() {
   .catch(error => console.error('Error:', error));
 }
 function handleIncorrectGuess() {
-  alert("Incorrect placement!");
-  const guessItem = document.getElementById('guessItem');
+const guessItem = document.getElementById('guessItem');
+  if (guessItem) {
+    const songYear = guessItem.getAttribute('data-year');
+    const songInfoText = guessItem.querySelector('.song-info').innerText;
+    const songName = songInfoText.split('\n')[0].trim(); 
+    alert(`Incorrect the answer was "${songName}"`);
+  } else {
+    alert("Incorrect placement!");
+  }
   const guessBox = document.getElementById('boxGuess');
   if (guessItem && guessBox && !guessBox.contains(guessItem)) {
     guessBox.appendChild(guessItem);
-  }
-  const validData = {};
-  for (let i = 1; i <= 10; i++) {
-    const topBox = document.getElementById(`box_top_${i}`);
-    const midBox = document.getElementById(`box${i}`);
-    const botBox = document.getElementById(`box_bot_${i}`);
-    const getSongNames = (box) => {
-      if (!box) return [];
-      return Array.from(box.querySelectorAll('.boxText'))
-        .filter(p => p.id !== 'guessItem')
-        .map(p => p.querySelector('.song-info').innerHTML.split('<br>')[0].trim());
-    };
-    validData[`box_top_${i}`] = getSongNames(topBox);
-    validData[`box${i}`] = getSongNames(midBox);
-    validData[`box_bot_${i}`] = getSongNames(botBox);
   }
   fetch('/process-data', {
     method: 'POST',

@@ -93,7 +93,8 @@ def home():
                                 boxsong=boxsong,
                                 user_name=user_name,
                                 user_picture=user_picture,
-                                isadmin=isadmin)
+                                isadmin=isadmin,
+                                song_id=id)
     else:
         return render_template("login_needed.html",login_location=login_location)
     
@@ -402,20 +403,15 @@ def process_data():
     cur = conn.cursor() 
     payload = request.json
     data = payload.get('data', {})
-    song_ids = {}
-    for box, songs in data.items():
-        if songs and len(songs) > 0:
-            raw_text = songs[0]
-            row = cur.execute("SELECT id FROM song WHERE name = ?", (raw_text,)).fetchone()
-            if row:
-                song_ids[box] = row[0]
     cur.execute("DELETE FROM boxes")
-    for box, song_id in song_ids.items():
-        if song_id is not None:
-            cur.execute("INSERT INTO boxes (boxid, songid) VALUES (?, ?)", (box, song_id))
+    for box, song_ids in data.items():
+        if song_ids:
+            for song_id in song_ids:
+                if song_id is not None:
+                    cur.execute("INSERT INTO boxes (boxid, songid) VALUES (?, ?)", (box, song_id))                   
     conn.commit()
     conn.close()
-    return jsonify({'result': 'success', 'song_ids': song_ids})
+    return jsonify({'result': 'success'})
 
 @app.route('/reset', methods=['POST'])
 def reset():
