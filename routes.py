@@ -9,6 +9,7 @@ import spotipy
 import webbrowser
 import requests
 import datetime
+from flask_mail import Mail,Message
 from werkzeug.utils import secure_filename
 load_dotenv()
 username = 'wqgfeis2dlz27xoecb7h5oqfa'
@@ -41,6 +42,17 @@ isadmin = False
 app.config['COVER_FOLDER'] = os.path.join(app.root_path, 'static', 'cover_art')
 os.makedirs(app.config['COVER_FOLDER'], exist_ok=True)
 
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587                   
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'hitstermegawebsite@gmail.com'
+app.config['MAIL_PASSWORD'] = 'wxzjessajytnbqwj' 
+app.config['MAIL_DEFAULT_SENDER'] = 'hitstermegawebsite@gmail.com'
+
+mail = Mail(app)
+
+
 
 class DataStore():
     boxdata = None
@@ -61,8 +73,7 @@ def home():
         cur = conn.cursor()
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
-            return render_template("banned.html",
-                                   banned=banned) 
+            return redirect(url_for('banned'))
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
             isadmin = True  
@@ -149,7 +160,7 @@ def add_song():
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
             conn.close()
-            return render_template("banned.html", banned=banned)    
+            return redirect(url_for('banned'))
         title = "Add a song"
         conn.close()
         return render_template(
@@ -184,8 +195,7 @@ def song_list():
             isadmin = True  
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
-            return render_template("banned.html",
-                                   banned=banned) 
+            return redirect(url_for('banned'))
         title = "Songs List"
         genre_rows = cur.execute("SELECT SongID, GenreID FROM GenreSong").fetchall()
         song_genres = {}
@@ -223,8 +233,7 @@ def help():
             isadmin = True  
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
-            return render_template("banned.html",
-                                   banned=banned)   
+            return redirect(url_for('banned'))
         posts = cur.execute("SELECT PostID,OwnerID,Title,Resolved,PostDate,OwnerName,OwnerPFP FROM ForumPost").fetchall()
         title = "Help Forums"
         conn.commit()
@@ -257,8 +266,7 @@ def helppage(page_ID):
             isadmin = True
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
-            return render_template("banned.html",
-                                   banned=banned)   
+            return redirect(url_for('banned')) 
         postinfo = cur.execute("SELECT PostID,OwnerID,Title,Content,Resolved,OwnerName,OwnerPFP FROM ForumPost WHERE PostID = ?",(page_ID,)).fetchone()
         comments = cur.execute(f"SELECT * FROM ForumComment WHERE CommentID IN (SELECT CommentID FROM ForumComment WHERE ParentID = ?)", (page_ID,)).fetchall()
         title = postinfo[2]
@@ -294,8 +302,7 @@ def newpost():
             isadmin = True
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
-            return render_template("banned.html",
-                                   banned=banned)       
+            return redirect(url_for('banned'))  
         title = "New Post"
         conn.commit()
         conn.close()
@@ -327,8 +334,7 @@ def admin():
             isadmin = True
             banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
             if banned and banned[0] == 1:
-                return render_template("banned.html",
-                                    banned=banned)  
+                redirect(url_for('banned'))
             users = cur.execute("SELECT * FROM Users").fetchall()
             unnaproved_songs = cur.execute("SELECT * from Song WHERE Approved = 0").fetchall()
             title = "New Post"
@@ -345,7 +351,28 @@ def admin():
         else:
             abort(403)
     else:
-        return render_template("login_needed.html",login_location=login_location)    
+        return render_template("login_needed.html",login_location=login_location)
+
+@app.route("/banned")   
+def banned():
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    if 'google_token' in session:
+        user = session['google_token'].get('userinfo')
+        banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        userinfo = cur.execute("SELECT id,name,email FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        msg = Message(
+            subject = f"Ban Appeal for {userinfo[1]}",
+            recipients=["hitstermegawebsite@gmail.com"]
+        )
+        msg.body = f"{userinfo[2]} is requesting a ban appeal for"
+        
+        mail.send(msg)
+        return render_template("banned.html",banned=banned) 
+    
+    else:
+        return redirect(url_for('home'))
+
     
 @app.route("/login")
 def login():
@@ -489,6 +516,8 @@ def ban():
             "UPDATE Users SET Isbanned = 1, BanReason = ? WHERE id = ?", 
             (ban_reason, user_id)
         ) 
+        cur.execute("DELETE FROM ForumPost WHERE OwnerID = ?", (user_id,))
+
         conn.commit()
         conn.close()
     return redirect(request.referrer or url_for('index'))
