@@ -4,7 +4,18 @@
 <br>
 <h1>YOU HAVE BEEN BANNED!</h1>
 <p>You have been banned for {{banned[1]}}</p>
-
-<p>to appeal your ban here</p>
-
+{%if hasappealed[0] == 1 %}
+    <p>Your appeal will be reviewed and you will recive an email within the next 10 buisness days stating the result of your appeal</p>
+{%endif%}
+{% if hasappealed[0] == 0 %}
+    <h2>YOU ONLY GET ONE APPEAL SO USE IT WISELY</h2>
+    <p>Insert your appeal reason and any information here</p>
+    <form action="/banappeal" method="POST">
+        <h2>State the Reason for your appeal here</h2>
+        <input type="text" id="AppealReason" name="AppealReason" required placeholder="AppealReason" size="50" maxlength="50"><br><br>
+        <h2>Provide information to support your appeal</h2>
+        <textarea type="content" id="content" name="content" required placeholder="Appeal Info" cols="50" rows="5" style="resize: none;" maxlength="3000"></textarea><br><br>
+        <button type="submit">Submit</button>
+    </form>
+{%endif%}
 {%endblock%}

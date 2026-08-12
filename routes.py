@@ -360,16 +360,11 @@ def banned():
     if 'google_token' in session:
         user = session['google_token'].get('userinfo')
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-        userinfo = cur.execute("SELECT id,name,email FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-        msg = Message(
-            subject = f"Ban Appeal for {userinfo[1]}",
-            recipients=["hitstermegawebsite@gmail.com"]
-        )
-        msg.body = f"{userinfo[2]} is requesting a ban appeal for"
-        
-        mail.send(msg)
-        return render_template("banned.html",banned=banned) 
-    
+        if banned[0] == 1:
+            hasappealed = cur.execute("SELECT HasAppealed FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+            return render_template("banned.html",banned=banned,hasappealed=hasappealed)
+        else:
+            return redirect(url_for('home'))
     else:
         return redirect(url_for('home'))
 
@@ -501,6 +496,8 @@ def unban():
         cur = conn.cursor()
         cur.execute("UPDATE Users SET Isbanned = 0 WHERE id = ?", (user_id,))
         cur.execute("UPDATE Users SET Banreason = Null WHERE id = ?", (user_id,))
+        userinfo = cur.execute("SELECT HasAppealed,email FROM Users WHERE id = ?", (user_id,)).fetchone()
+        
         conn.commit()
         conn.close()
     return redirect(request.referrer or url_for('index'))
@@ -582,6 +579,30 @@ def deletepost():
         conn.commit()
         conn.close()
     return redirect(request.referrer or url_for('index'))
+
+@app.route('/banappeal', methods=['post'])
+def banappeal():
+    appeal_reason = request.form['AppealReason']
+    content = request.form['content']
+    user = session['google_token'].get('userinfo')
+    conn = sqlite3.connect("Hitster.db")
+    cur = conn.cursor()
+    banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+    hasappealed = cur.execute("SELECT HasAppealed FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+    userinfo = cur.execute("SELECT id,name,email FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+    if hasappealed[0] == 0:
+        msg = Message(
+            subject = f"{userinfo[2]} is requesting a ban appeal for {banned[1]}",
+            recipients=["hitstermegawebsite@gmail.com"]
+        )
+        msg.body = f"""The reason for the appeal is "{appeal_reason}". They provided the following information "{content}" """
+        
+        mail.send(msg)
+        cur.execute("UPDATE Users SET HasAppealed = ? WHERE id = ?", (1, userinfo[0]))
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for("banned"))    
 
 if __name__ == "__main__":
     app.run(debug=True)
