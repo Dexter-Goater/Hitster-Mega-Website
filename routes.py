@@ -496,8 +496,25 @@ def unban():
         cur = conn.cursor()
         cur.execute("UPDATE Users SET Isbanned = 0 WHERE id = ?", (user_id,))
         cur.execute("UPDATE Users SET Banreason = Null WHERE id = ?", (user_id,))
-        userinfo = cur.execute("SELECT HasAppealed,email FROM Users WHERE id = ?", (user_id,)).fetchone()
-        
+        userinfo = cur.execute("SELECT HasAppealed,email,Name FROM Users WHERE id = ?", (user_id,)).fetchone()
+        print(userinfo[1])
+        if userinfo[0] == 0:
+            msg = Message(
+                subject = f"Ban appeal",
+                recipients=[userinfo[1]]
+            )
+            msg.body = f"""Hello {userinfo[2]} if you are seeing this email it means that you have been unbanned from the Hitster Mega Website"""
+            
+            mail.send(msg)
+        if userinfo[0] == 1:
+            msg = Message(
+                subject = f"Ban appeal",
+                recipients=[userinfo[1]]
+            )
+            msg.body = f"""Hello {userinfo[2]} if you are seeing this email it means that your appeal has been accepted and you have been unbanned from the Hitster Mega Website"""
+            
+            mail.send(msg)
+        cur.execute("UPDATE Users SET HasAppealed = 0 WHERE id = ?",(user_id,))
         conn.commit()
         conn.close()
     return redirect(request.referrer or url_for('index'))
