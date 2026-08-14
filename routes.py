@@ -500,7 +500,7 @@ def unban():
         print(userinfo[1])
         if userinfo[0] == 0:
             msg = Message(
-                subject = f"Ban appeal",
+                subject = f"Ban status",
                 recipients=[userinfo[1]]
             )
             msg.body = f"""Hello {userinfo[2]} if you are seeing this email it means that you have been unbanned from the Hitster Mega Website"""
@@ -531,6 +531,14 @@ def ban():
             (ban_reason, user_id)
         ) 
         cur.execute("DELETE FROM ForumPost WHERE OwnerID = ?", (user_id,))
+        userinfo = cur.execute("SELECT HasAppealed,email,Name FROM Users WHERE id = ?", (user_id,)).fetchone()
+        msg = Message(
+            subject = f"Ban",
+            recipients=[userinfo[1]]
+        )
+        msg.body = f"""Hello {userinfo[2]} if you are seeing this email it means that you have been banned from the Hitster Mega Website for {ban_reason}"""
+
+        mail.send(msg)
 
         conn.commit()
         conn.close()
