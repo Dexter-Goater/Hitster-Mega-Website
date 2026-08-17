@@ -442,6 +442,7 @@ def reset():
     cur.execute("UPDATE boxes SET songid = NULL")
     conn.commit()
     conn.close()
+    return jsonify({'result': 'success'})
 
 @app.route('/submit', methods=['POST'])
 def submit():

@@ -103,32 +103,26 @@ function validateAndSubmit() {
   .catch(error => console.error('Error:', error));
 }
 function handleIncorrectGuess() {
-const guessItem = document.getElementById('guessItem');
+  const guessItem = document.getElementById('guessItem');
   if (guessItem) {
     const songYear = guessItem.getAttribute('data-year');
     const songInfoText = guessItem.querySelector('.song-info').innerText;
     const songName = songInfoText.split('\n')[0].trim(); 
-    alert(`Incorrect the answer was "${songName}"`);
+    alert(`Incorrect! The answer was "${songName}"`);
   } else {
     alert("Incorrect placement!");
   }
+  
   const guessBox = document.getElementById('boxGuess');
   if (guessItem && guessBox && !guessBox.contains(guessItem)) {
     guessBox.appendChild(guessItem);
   }
-  fetch('/process-data', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data: validData, status: 'incorrect' })
-  })
-  .then(() => {
-    window.location.reload();
-  })
-  .catch(error => console.error('Error:', error));
 }
+
 function resetAllData() {
   fetch('/reset', { method: 'POST' })
   .then(() => window.location.reload());
 }
+
 </script>
 {%endblock%}

@@ -37,7 +37,12 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
   }
 
-  function Drop() {
-    this.append(draggedItem); // append whichever item was dragged
+function Drop(e) {
+    e.preventDefault();
+    if (this.children.length === 0 || this.contains(draggedItem)) {
+      this.append(draggedItem);
+    } else {
+      console.log("This box is already full!");
+    }
   }
 });
