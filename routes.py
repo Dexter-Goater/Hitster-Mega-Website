@@ -219,6 +219,7 @@ def song_list():
 def help():
     user_name = None
     user_picture = None
+    user_id = None
     isadmin = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
@@ -228,6 +229,7 @@ def help():
         if user:
             user_name = user.get('name')
             user_picture = user.get('picture')
+            user_id = user.get('sub')
         admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
             isadmin = True  
@@ -243,6 +245,7 @@ def help():
                             title=title,
                             user_name=user_name,
                             user_picture=user_picture,
+                            user_id=user_id,
                             isadmin=isadmin,
                             posts=posts)
     else:
@@ -601,7 +604,18 @@ def deletepost():
     if post_id:
         conn = sqlite3.connect("Hitster.db")
         cur = conn.cursor()
-        cur.execute("DELETE FROM ForumPost WHERE id = ?", (post_id,)) 
+        cur.execute("DELETE FROM ForumPost WHERE POSTID = ?", (post_id,)) 
+        conn.commit()
+        conn.close()
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/resolvepost', methods=['POST'])
+def resolvepost():
+    post_id = request.form.get('post_id')  
+    if post_id:
+        conn = sqlite3.connect("Hitster.db")
+        cur = conn.cursor()
+        cur.execute("UPDATE ForumPost SET Resolved = 1 WHERE POSTID = ?", (post_id,)) 
         conn.commit()
         conn.close()
     return redirect(request.referrer or url_for('index'))
