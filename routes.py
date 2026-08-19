@@ -627,12 +627,10 @@ def banappeal():
     user = session['google_token'].get('userinfo')
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
-    banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-    hasappealed = cur.execute("SELECT HasAppealed FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-    userinfo = cur.execute("SELECT id,name,email FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
-    if hasappealed[0] == 0:
+    userinfo = cur.execute("SELECT id,name,email,Isbanned,Banreason,HasAppealed  FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+    if userinfo[5] == 0:
         msg = Message(
-            subject = f"{userinfo[2]} is requesting a ban appeal for {banned[1]}",
+            subject = f"{userinfo[2]} is requesting a ban appeal for {userinfo[4]}",
             recipients=["hitstermegawebsite@gmail.com"]
         )
         msg.body = f"""The reason for the appeal is "{appeal_reason}". They provided the following information "{content}" """
