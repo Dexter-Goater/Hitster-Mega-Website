@@ -1,33 +1,57 @@
-from flask import Flask, render_template, abort, session, jsonify, request,redirect,url_for,flash
-from authlib.integrations.flask_client import OAuth
-from dotenv import load_dotenv
+"""Hitster Mega Website - Flask web app.
+
+Routes:
+
+Pages:
+/                       Home page and game
+/add_song               Submit a song to the database
+/songlist               List of approved songs
+/help                   Forum post list
+/help/<page_ID>         Single forum post and its comments
+/admin                  Admin panel
+/banned                 Ban notice and appeal page
+
+Backend:
+/login                  Redirects to Google sign in
+/login/authorized       Creates and updates the user in database
+/logout                 Clears the sessions login
+/process-data           Submits game data
+/reset                  Clears all game boxes
+/submit                 Create a forum post
+/reply                  Comment on a forum post
+/deletepost             Delete a post
+/resolvepost            Mark a post as resolved
+/ban,/unban             Ban or unban a user
+/approvesong,/denysong  Approve or delete a submitted song
+/banappeal              Email a ban appeal to the admin address
+error handler           renders error page
+"""
+
 import sqlite3
 import os
 import random
-import json
-import spotipy
-import webbrowser
-import requests
 import datetime
+import spotipy
+from flask import Flask, render_template, abort, session, jsonify, request,redirect,url_for
+from authlib.integrations.flask_client import OAuth
+from dotenv import load_dotenv
 from flask_mail import Mail,Message
-from werkzeug.utils import secure_filename
 load_dotenv()
-username = 'wqgfeis2dlz27xoecb7h5oqfa'
 clientID = os.getenv("SPOTIFY_CLIENT_ID")
 clientSecret = os.getenv("SPOTIFY_CLIENT_SECRET")
-redirect_uri = 'https://example.com/'
-oauth_object = spotipy.SpotifyOAuth(clientID, clientSecret, redirect_uri)
+REDIRECT_URI = 'https://example.com/'
+oauth_object = spotipy.SpotifyOAuth(clientID, clientSecret, REDIRECT_URI)
 token_dict = oauth_object.get_access_token()
 token = token_dict['access_token']
 
-spotifyObject = spotipy.Spotify(auth=token)
-user_name = spotifyObject.current_user()
+SPOTIFYOBJECT = spotipy.Spotify(auth=token)
+user_name = SPOTIFYOBJECT.current_user()
 app = Flask(__name__)
 app.secret_key = os.getenv("APP_SECRET_KEY")
 
 google_client_id = os.getenv("GOOGLE_CLIENT_ID")
 google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
-google_redirect_uri = 'https://127.0.0.1:5000/login/callback'
+GOOGLE_REDIRECT_URI = 'https://127.0.0.1:5000/login/callback'
 
 oauth = OAuth(app)
 google = oauth.register(
@@ -38,7 +62,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-isadmin = False
+ISADMIN = False
 app.config['COVER_FOLDER'] = os.path.join(app.root_path, 'static', 'cover_art')
 os.makedirs(app.config['COVER_FOLDER'], exist_ok=True)
 
@@ -55,15 +79,22 @@ mail = Mail(app)
 
 
 class DataStore():
+    """Holds shared game box data"""
     boxdata = None
 
 
 #Defines the home route
 @app.route("/")
 def home():
+    """Route for the home page
+    Returns:
+    home.html if the user is logged in
+    A redirect to the ban page if the user is banned
+    login_needed.html if the user is not logged in
+    """
     user_name = None
     user_picture = None
-    isadmin = False
+    ISADMIN = False
     login_location = "Home"
     #Checks if the user is logged in with google
     if 'google_token' in session:
@@ -78,20 +109,20 @@ def home():
         if banned and banned[0] == 1:
             return redirect(url_for('banned'))
         #This query is on most pages in the website and it checks if users are admins so they can be given permissions
-        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        admin = cur.execute("SELECT ISADMIN FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True  
+            ISADMIN = True  
         #This query selects all the songs
         data = cur.execute("SELECT id from Song WHERE Approved = 1").fetchall()
         id = data[random.randint(0, len(data) - 1)][0]
-        res = cur.execute(f"SELECT name,artist,releaseyear from Song WHERE id = {id}").fetchall()
+        res = cur.execute("SELECT name, artist, releaseyear FROM Song WHERE id = ?", (id,)).fetchall()
         name = res[0]
         song_title = name[0]
         artist = res[0][1]
         year = res[0][2]
         search_song = f"{name[0]}"
         #This uses the spotify api to find the song on spotify
-        results = spotifyObject.search(f"q=track:{song_title}%20artist:{artist}%20year:{year}")
+        results = SPOTIFYOBJECT.search(f"q=track:{song_title}%20artist:{artist}%20year:{year}")
         songs_dict = results['tracks']
         song_items = songs_dict['items']
         song = song_items[0]['uri']
@@ -111,7 +142,7 @@ def home():
                                 boxsong=boxsong,
                                 user_name=user_name,
                                 user_picture=user_picture,
-                                isadmin=isadmin,
+                                isadmin=ISADMIN,
                                 song_id=id)
     #redirects to user to the loginpage if they are not logged in
     else:
@@ -123,7 +154,7 @@ def add_song():
     user_name = None
     user_picture = None
     show_error_none = False
-    isadmin = False
+    ISADMIN = False
     login_location = "add a song"
     if 'google_token' in session:
         user = session['google_token'].get('userinfo')
@@ -166,9 +197,9 @@ def add_song():
                 show_error_none = True
         #gets all the genres for the user to choose from
         genres = cur.execute("SELECT Genreid, name FROM Genre").fetchall()
-        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        admin = cur.execute("SELECT ISADMIN FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True
+            ISADMIN = True
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
             conn.close()
@@ -181,7 +212,7 @@ def add_song():
             user_name=user_name,
             user_picture=user_picture,
             show_error_none=show_error_none,
-            isadmin=isadmin,
+            isadmin=ISADMIN,
             genres=genres
         )
     else:
@@ -192,7 +223,7 @@ def add_song():
 def song_list():
     user_name = None
     user_picture = None
-    isadmin = False
+    ISADMIN = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     login_location = "Songs List"
@@ -204,9 +235,9 @@ def song_list():
             user_picture = user.get('picture')
         #gets all the songs to be displayed on the page
         songs = cur.execute("SELECT id,name,artist,releaseyear FROM song WHERE Approved = 1").fetchall()
-        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        admin = cur.execute("SELECT ISADMIN FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True  
+            ISADMIN = True  
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
             return redirect(url_for('banned'))
@@ -223,7 +254,7 @@ def song_list():
                             title=title,
                             user_name=user_name,
                             user_picture=user_picture,
-                            isadmin=isadmin,
+                            isadmin=ISADMIN,
                             songs=songs,
                             song_genres=song_genres)
     else:
@@ -235,7 +266,7 @@ def help():
     user_name = None
     user_picture = None
     user_id = None
-    isadmin = False
+    ISADMIN = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     login_location = "Help Forums"    
@@ -245,9 +276,9 @@ def help():
             user_name = user.get('name')
             user_picture = user.get('picture')
             user_id = user.get('sub')
-        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        admin = cur.execute("SELECT ISADMIN FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True  
+            ISADMIN = True  
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
             return redirect(url_for('banned'))
@@ -262,7 +293,7 @@ def help():
                             user_name=user_name,
                             user_picture=user_picture,
                             user_id=user_id,
-                            isadmin=isadmin,
+                            isadmin=ISADMIN,
                             posts=posts)
     else:
         return render_template("login_needed.html",login_location=login_location)  
@@ -272,7 +303,7 @@ def help():
 def helppage(page_ID):
     user_name = None
     user_picture = None
-    isadmin = False
+    ISADMIN = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     login_location = "Help Forums"    
@@ -281,16 +312,16 @@ def helppage(page_ID):
         if user:
             user_name = user.get('name')
             user_picture = user.get('picture')
-        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        admin = cur.execute("SELECT ISADMIN FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True
+            ISADMIN = True
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
             return redirect(url_for('banned')) 
         #gets all the posts information where it matches the post from the page the user is on
         postinfo = cur.execute("SELECT PostID,OwnerID,Title,Content,Resolved,OwnerName,OwnerPFP FROM ForumPost WHERE PostID = ?",(page_ID,)).fetchone()
         #gets all the comments on the post the user is on
-        comments = cur.execute(f"SELECT * FROM ForumComment WHERE CommentID IN (SELECT CommentID FROM ForumComment WHERE ParentID = ?)", (page_ID,)).fetchall()
+        comments = cur.execute("SELECT * FROM ForumComment WHERE CommentID IN (SELECT CommentID FROM ForumComment WHERE ParentID = ?)", (page_ID,)).fetchall()
         title = postinfo[2]
         conn.commit()
         conn.close()
@@ -299,7 +330,7 @@ def helppage(page_ID):
                             title=title,
                             user_name=user_name,
                             user_picture=user_picture,
-                            isadmin=isadmin,
+                            isadmin=ISADMIN,
                             postinfo=postinfo,
                             comments=comments,
                             page_ID = page_ID)
@@ -311,7 +342,7 @@ def helppage(page_ID):
 def newpost():
     user_name = None
     user_picture = None
-    isadmin = False
+    ISADMIN = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     login_location = "Help Forums"    
@@ -320,9 +351,9 @@ def newpost():
         if user:
             user_name = user.get('name')
             user_picture = user.get('picture')
-        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        admin = cur.execute("SELECT ISADMIN FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True
+            ISADMIN = True
         banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if banned and banned[0] == 1:
             return redirect(url_for('banned'))  
@@ -334,7 +365,7 @@ def newpost():
                             title=title,
                             user_name=user_name,
                             user_picture=user_picture,
-                            isadmin=isadmin,)
+                            isadmin=ISADMIN,)
     else:
         return render_template("login_needed.html",login_location=login_location) 
 
@@ -343,7 +374,7 @@ def newpost():
 def admin():
     user_name = None
     user_picture = None
-    isadmin = False
+    ISADMIN = False
     conn = sqlite3.connect("Hitster.db")
     cur = conn.cursor()
     login_location = "Help Forums"    
@@ -352,9 +383,9 @@ def admin():
         if user:
             user_name = user.get('name')
             user_picture = user.get('picture')
-        admin = cur.execute("SELECT Isadmin FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
+        admin = cur.execute("SELECT ISADMIN FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
         if admin and admin[0] == 1:
-            isadmin = True
+            ISADMIN = True
             banned = cur.execute("SELECT Isbanned,Banreason FROM Users WHERE id = ?", (user.get('sub'),)).fetchone()
             if banned and banned[0] == 1:
                 redirect(url_for('banned'))
@@ -370,7 +401,7 @@ def admin():
                                 title=title,
                                 user_name=user_name,
                                 user_picture=user_picture,
-                                isadmin=isadmin,
+                                isadmin=ISADMIN,
                                 users=users,
                                 unnaproved_songs=unnaproved_songs)
         #gives the user a forbidden error if they are not an admin
@@ -421,7 +452,7 @@ def authorized():
     now = datetime.datetime.now().strftime("%d-%m-%y")
     #this query updates the users information in the database
     cur.execute("""
-        INSERT INTO users (id, name, email, profile_pic, date_joined, Isadmin, Isbanned)
+        INSERT INTO users (id, name, email, profile_pic, date_joined, ISADMIN, Isbanned)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
@@ -602,7 +633,7 @@ def promoteadmin():
         conn = sqlite3.connect("Hitster.db")
         cur = conn.cursor()
         #makes the user an admin in the database
-        cur.execute("UPDATE Users SET Isadmin = 1 WHERE id = ?", (user_id,))
+        cur.execute("UPDATE Users SET ISADMIN = 1 WHERE id = ?", (user_id,))
         conn.commit()
         conn.close()
     return redirect(request.referrer or url_for('index'))
@@ -615,7 +646,7 @@ def demoteadmin():
         conn = sqlite3.connect("Hitster.db")
         cur = conn.cursor()
         #makes the admin a user in the database
-        cur.execute("UPDATE Users SET Isadmin = 0 WHERE id = ?", (user_id,))
+        cur.execute("UPDATE Users SET ISADMIN = 0 WHERE id = ?", (user_id,))
         conn.commit()
         conn.close()
     return redirect(request.referrer or url_for('index'))
