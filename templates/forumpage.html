@@ -21,9 +21,9 @@
 <br>
 {%for comment in comments%}
     <div style="background-color: #2c2c2c; display: inline-block;padding: 0.3vw; border-radius: 5px;">
-        <p>{{comment[2]}}</p>
+        <p>{{comment[0]}}</p>
         <span style="display: inline-flex; color:#fefdfd;font-family: Montserrat,sans-serif; font-weight: 500;">
-            {{comment[4]}} <img src="{{comment[5]}}" style="height: 1.2vw; width: 1.2vw; margin-left: 0.5vw; ">
+            {{comment[1]}} <img src="{{comment[2]}}" style="height: 1.2vw; width: 1.2vw; margin-left: 0.5vw; ">
         </span>
     </div>
     <br>

@@ -7,7 +7,7 @@ Pages:
 /add_song               Submit a song to the database
 /songlist               List of approved songs
 /help                   Forum post list
-/help/<page_ID>         Single forum post and its comments
+/help/<page_id>         Single forum post and its comments
 /admin                  Admin panel
 /banned                 Ban notice and appeal page
 
@@ -43,7 +43,7 @@ load_dotenv()
 clientID = os.getenv("SPOTIFY_CLIENT_ID")
 clientSecret = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = 'https://example.com/'
-# Authenticate with Spotify API 
+# Authenticate with Spotify API
 oauth_object = spotipy.SpotifyOAuth(clientID, clientSecret, REDIRECT_URI)
 token_dict = oauth_object.get_access_token()
 token = token_dict['access_token']
@@ -67,7 +67,6 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-ISADMIN = False
 # Configure directory and constraints for uploaded song covers
 app.config['COVER_FOLDER'] = os.path.join(app.root_path, 'static', 'cover_art')
 os.makedirs(app.config['COVER_FOLDER'], exist_ok=True)
@@ -179,8 +178,8 @@ def home():
     song_items = songs_dict['items']
     # Takes the top search result
     song = song_items[0]['uri']
-    # this query gets all the information in all the boxes
-    boxsong = cur.execute("""SELECT boxes.boxid, song.* FROM boxes
+    # this query gets all the relevant information in all the boxes
+    boxsong = cur.execute("""SELECT boxes.boxid, song.id,name,releaseyear,artist FROM boxes
                              JOIN song ON boxes.songid = song.id""").fetchall()
     title = "Home"
     conn.commit()
@@ -319,7 +318,7 @@ def forum():
 
 
 # defines the individual post page
-@app.route("/help/<int:page_ID>")
+@app.route("/help/<int:page_id>")
 @login_required("Help Forums")
 def helppage(page_id):
     """Route for the individual forum page
@@ -342,7 +341,7 @@ def helppage(page_id):
                   OwnerPFP FROM ForumPost WHERE PostID = ?""",(page_id,)).fetchone()
     # gets all the comments on the post the user is on
     comments = cur.execute(
-        """SELECT * FROM ForumComment WHERE CommentID IN 
+        """SELECT content,ownername,ownerpfp FROM ForumComment WHERE CommentID IN 
         (SELECT CommentID FROM ForumComment WHERE ParentID = ?)"""
         ,(page_id,)).fetchall()
     title = postinfo[2]
@@ -397,9 +396,18 @@ def admin():
     if is_banned(cur, user.get('sub')):
         return redirect(url_for('banned'))
     # gets all the information on all the users
-    users = cur.execute("SELECT * FROM Users").fetchall()
+    users = cur.execute("""SELECT id,
+                           name,
+                           profile_pic,
+                           isadmin,
+                           date_joined,
+                           isbanned,
+                           banreason FROM Users""").fetchall()
     # gets all the songs that are yet to be approved
-    unnaproved_songs = cur.execute("SELECT * from Song WHERE Approved = 0").fetchall()
+    unnaproved_songs = cur.execute("""SELECT id,
+                                      name,
+                                      releaseyear,
+                                      artist from Song WHERE Approved = 0""").fetchall()
     title = "Admin"
     conn.commit()
     conn.close()
@@ -566,7 +574,7 @@ def submit():
     conn.commit()
     conn.close()
 
-    return redirect(url_for("help"))
+    return redirect(url_for("forum"))
 
 
 # this route runs when a user replys to a forum post
@@ -601,7 +609,7 @@ def reply():
     )
     conn.commit()
     conn.close()
-    return redirect(url_for("help", page_ID=page_id))
+    return redirect(url_for("helppage", page_ID=page_id))
 
 
 
@@ -649,7 +657,7 @@ def unban():
         cur.execute("UPDATE Users SET HasAppealed = 0 WHERE id = ?", (user_id,))
         conn.commit()
         conn.close()
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('home'))
 
 
 # this route runs when an admin bans a user
@@ -687,7 +695,7 @@ def ban():
 
         conn.commit()
         conn.close()
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('home'))
 
 
 # this route runs when an admin promotes a user to an admin
@@ -704,7 +712,7 @@ def promoteadmin():
         cur.execute("UPDATE Users SET ISADMIN = 1 WHERE id = ?", (user_id,))
         conn.commit()
         conn.close()
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('home'))
 
 
 # this route runs whenever an admin demotes an admin to a user
@@ -721,7 +729,7 @@ def demoteadmin():
         cur.execute("UPDATE Users SET ISADMIN = 0 WHERE id = ?", (user_id,))
         conn.commit()
         conn.close()
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('home'))
 
 
 # this route runs whenever an admin approves a users song
@@ -738,7 +746,7 @@ def approvesong():
         cur.execute("UPDATE Song SET Approved = 1 WHERE id = ?", (song_id,))
         conn.commit()
         conn.close()
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('home'))
 
 
 # this route runs whenever an admin denys a users song request
@@ -763,7 +771,7 @@ def denysong():
         # deletes the image from the coverart folder
         if os.path.exists(image_path):
             os.remove(image_path)
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('home'))
 
 
 # this route runs when a admin or the owner of a post deletes it
@@ -780,7 +788,7 @@ def deletepost():
         cur.execute("DELETE FROM ForumPost WHERE POSTID = ?", (post_id,))
         conn.commit()
         conn.close()
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('home'))
 
 
 # this route runs when a admin or the owner of a post resolves it
@@ -797,7 +805,7 @@ def resolvepost():
         cur.execute("UPDATE ForumPost SET Resolved = 1 WHERE POSTID = ?", (post_id,))
         conn.commit()
         conn.close()
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('home'))
 
 
 # this route runs when a user requests a ban appeal

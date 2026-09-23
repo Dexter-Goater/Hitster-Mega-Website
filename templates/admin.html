@@ -30,18 +30,18 @@
     <div class="Users">
     <h1>Users</h1>
     {%for user in users%}
-        {%if user[6] == 0%}
+        {%if user[5] == 0%}
             <div style="background-color: #2c2c2c; margin-left: 10px; margin-right: 10px; display: flex; align-items: center; padding: 8px;">
-                <img src="{{user[3]}}" style="width: 40px; height: 40px; object-fit: cover;">
-                <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{user[1]}}. Joined {{user[5]}}</span>
+                <img src="{{user[2]}}" style="width: 40px; height: 40px; object-fit: cover;">
+                <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{user[1]}}. Joined {{user[4]}}</span>
                 <div style="margin-left: auto; display: flex; gap: 8px;">
-                    {%if user[4] == 0%}
+                    {%if user[3] == 0%}
                         <form action="/promoteadmin" method="POST">
                             <input type="hidden" name="user_id" value="{{user[0]}}">
                             <button type="submit" style="background-color:green;">Promote to Admin</button>
                         </form>
                     {%endif%}
-                    {%if user[4] == 1%}
+                    {%if user[3] == 1%}
                         <form action="/demoteadmin" method="POST">
                             <input type="hidden" name="user_id" value="{{user[0]}}">
                             <button type="submit" style="background-color: orange;">Demote from Admin</button>
@@ -82,10 +82,10 @@
     <div class="BannedUsers">
     <h1> Banned Users</h1>
     {%for user in users%}
-        {%if user[6] == 1%}
+        {%if user[5] == 1%}
             <div style="background-color: #2c2c2c; margin-left: 10px; margin-right: 10px; display: flex; align-items: center; padding: 8px;">
-                <img src="{{user[3]}}" style="width: 40px; height: 40px; object-fit: cover;">
-                <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{user[1]}}. Banned for {{user[7]}}</span>
+                <img src="{{user[2]}}" style="width: 40px; height: 40px; object-fit: cover;">
+                <span style="margin-left: 10px;  color:#fefdfd;font-family: Montserrat, sans-serif;font-weight: 500;">{{user[1]}}. Banned for {{user[6]}}</span>
                 <div style="margin-left: auto; display: flex; gap: 8px;">
                     <form action="/unban" method="POST">
                         <input type="hidden" name="user_id" value="{{ user[0] }}">
