@@ -341,9 +341,9 @@ def helppage(page_id):
                   OwnerPFP FROM ForumPost WHERE PostID = ?""",(page_id,)).fetchone()
     # gets all the comments on the post the user is on
     comments = cur.execute(
-        """SELECT content,ownername,ownerpfp FROM ForumComment WHERE CommentID IN 
-        (SELECT CommentID FROM ForumComment WHERE ParentID = ?)"""
-        ,(page_id,)).fetchall()
+        "SELECT content, ownername, ownerpfp FROM ForumComment WHERE ParentID = ?",
+        (page_id,)
+    ).fetchall()
     title = postinfo[2]
     conn.commit()
     conn.close()
@@ -352,7 +352,7 @@ def helppage(page_id):
                            title=title,
                            postinfo=postinfo,
                            comments=comments,
-                           page_ID=page_id,
+                           page_id=page_id,
                            **ctx)
 
 
@@ -585,7 +585,7 @@ def reply():
         Redirects users to the forum page they came from
     """
     comment_content = request.form['reply']
-    page_id = request.form['page_ID']
+    page_id = request.form['page_id']
 
     user = session.get('google_token', {}).get('userinfo', {})
     user_name = user.get('name')
@@ -609,7 +609,7 @@ def reply():
     )
     conn.commit()
     conn.close()
-    return redirect(url_for("helppage", page_ID=page_id))
+    return redirect(url_for("helppage", page_id=page_id))
 
 
 
